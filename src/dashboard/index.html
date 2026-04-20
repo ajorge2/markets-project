@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Stress Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #0d1117;
+      color: #c9d1d9;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #e6edf3;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #6e7681;
+      margin-bottom: 32px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .controls label { font-size: 12px; color: #8b949e; }
+
+    .controls input[type="date"] {
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .controls button {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .controls button:hover { background: #30363d; }
+
+    .controls button.active {
+      background: #1f6feb;
+      border-color: #1f6feb;
+      color: white;
+    }
+
+    .as-of {
+      font-size: 11px;
+      color: #6e7681;
+      margin-left: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .sector-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .sector-card .sector-label {
+      font-size: 11px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .sector-card .sector-score {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .bar-track {
+      background: #21262d;
+      border-radius: 4px;
+      height: 6px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .bar-fill {
+      height: 6px;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .sector-card .components {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .component-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      padding: 4px 0;
+      border-top: 1px solid #21262d;
+    }
+
+    .component-row .comp-label { color: #8b949e; }
+    .component-row .comp-val { color: #e6edf3; }
+    .component-row .comp-pct {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .staleness-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .staleness-fresh    { background: #238636; }
+    .staleness-pending  { background: #9e6a03; }
+    .staleness-overdue  { background: #da3633; }
+    .staleness-historical { background: #6e7681; }
+    .staleness-no_data  { background: #484f58; }
+
+    .no-data-msg { color: #484f58; font-style: italic; }
+
+    #error-msg {
+      color: #da3633;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* Color scale: low stress = green, high stress = red */
+  </style>
+</head>
+<body>
+
+<h1>Credit Stress Dashboard</h1>
+<p class="subtitle">Early warning system for credit conditions across FIG sectors</p>
+
+<div class="controls">
+  <button id="btn-live" class="active" onclick="loadLive()">Live</button>
+  <label>Historical:</label>
+  <input type="date" id="date-picker" value="2008-09-01">
+  <button onclick="loadHistorical()">Load</button>
+  <span class="as-of" id="as-of-label"></span>
+</div>
+
+<div id="error-msg"></div>
+<div class="grid" id="sectors-grid"></div>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  function stressColor(pct) {
+    if (pct === null) return '#484f58';
+    if (pct < 25)  return '#238636';
+    if (pct < 50)  return '#2ea043';
+    if (pct < 70)  return '#9e6a03';
+    if (pct < 85)  return '#d29922';
+    return '#da3633';
+  }
+
+  function fmt(val, unit) {
+    if (val === null || val === undefined) return '—';
+    return `${parseFloat(val).toFixed(2)}${unit || ''}`;
+  }
+
+  function renderDashboard(data) {
+    const grid = document.getElementById('sectors-grid');
+    const asOf = document.getElementById('as-of-label');
+    const err = document.getElementById('error-msg');
+    err.style.display = 'none';
+
+    const label = data.is_live
+      ? `Live — ${data.as_of_date}`
+      : `Historical — ${data.as_of_date}`;
+    asOf.textContent = label;
+
+    const sectorOrder = ['banks', 'consumer', 'cre', 'corporate'];
+    grid.innerHTML = '';
+
+    sectorOrder.forEach(sectorKey => {
+      const sector = data.sectors[sectorKey];
+      if (!sector) return;
+
+      const score = sector.score;
+      const color = stressColor(score);
+
+      const card = document.createElement('div');
+      card.className = 'sector-card';
+
+      const componentsHtml = sector.components.map(sid => {
+        const s = data.series[sid];
+        if (!s || s.value === null) {
+          return `
+            <div class="component-row">
+              <span class="comp-label">${s ? s.label : sid}</span>
+              <span class="no-data-msg">no data</span>
+            </div>`;
+        }
+        const unit = s.display_unit === 'yoy %' ? ' YoY%' : '%';
+        const pctColor = stressColor(s.stress_pct);
+        const stalenessClass = `staleness-${s.staleness}`;
+        return `
+          <div class="component-row">
+            <span class="comp-label">
+              ${s.label}
+              <span class="staleness-dot ${stalenessClass}" title="${s.staleness}"></span>
+            </span>
+            <span>
+              <span class="comp-val">${fmt(s.value, unit)}</span>
+              &nbsp;
+              <span class="comp-pct" style="background:${pctColor}22;color:${pctColor}">
+                ${s.stress_pct !== null ? s.stress_pct.toFixed(0) : '—'}
+              </span>
+            </span>
+          </div>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="sector-label">${sector.label}</div>
+        <div class="sector-score" style="color:${color}">
+          ${score !== null ? score.toFixed(0) : '—'}
+          <span style="font-size:14px;color:#6e7681;font-weight:400">/100</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${score || 0}%;background:${color}"></div>
+        </div>
+        <div class="components">${componentsHtml}</div>`;
+
+      grid.appendChild(card);
+    });
+  }
+
+  function showError(msg) {
+    const err = document.getElementById('error-msg');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  async function loadLive() {
+    document.getElementById('btn-live').classList.add('active');
+    try {
+      const res = await fetch(`${API}/dashboard/current`);
+      renderDashboard(await res.json());
+    } catch(e) { showError(`Failed to load: ${e.message}`); }
+  }
+
+  async function loadHistorical() {
+    document.getElementById('btn-live').classList.remove('active');
+    const d = document.getElementById('date-picker').value;
+    try {
+      const res = await fetch(`${API}/dashboard/asof/${d}`);
+      if (!res.ok) { showError((await res.json()).detail); return; }
+      renderDashboard(await res.json());
+    } catch(e) { showError(`Failed to load: ${e.message}`); }
+  }
+
+  loadLive();
+</script>
+</body>
+</html>

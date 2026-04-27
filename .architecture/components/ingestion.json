@@ -1,0 +1,38 @@
+{
+  "title": "Ingestion Layer",
+  "zoom": "component",
+  "status": "current",
+  "nodes": [
+    { "id": "scheduler",    "label": "Credit Dashboard — Refresh Worker\n(src/ingestion/scheduler.py)", "type": "service" },
+    { "id": "fred_ingest",  "label": "src/ingestion/fred_ingest.py",                    "type": "component" },
+    { "id": "fred_client",  "label": "src/ingestion/fred_client.py",                    "type": "component" },
+    { "id": "fdic_ingest",  "label": "src/ingestion/fdic_ingest.py",                    "type": "component" },
+    { "id": "fdic_client",  "label": "src/ingestion/fdic_client.py",                    "type": "component" },
+    { "id": "edgar_ingest", "label": "src/ingestion/edgar_ingest.py",                   "type": "component" },
+    { "id": "edgar_client", "label": "src/ingestion/edgar_client.py",                   "type": "component" },
+    { "id": "db",           "label": "src/ingestion/db.py\n(psycopg2 conn helper)",     "type": "component" },
+    { "id": "backup",       "label": "src/ingestion/backup.py",                         "type": "component" },
+    { "id": "jsonl",        "label": "src/ingestion/jsonl.py\n(raw dump writer)",       "type": "component" },
+    { "id": "backfill",     "label": "src/ingestion/run_backfill.py\n+ backfill_hc_names.py", "type": "component" },
+    { "id": "fred",         "label": "FRED API",                                        "type": "external" },
+    { "id": "fdic",         "label": "FDIC BankFind API",                               "type": "external" },
+    { "id": "edgar",        "label": "SEC EDGAR API",                                   "type": "external" },
+    { "id": "postgres",     "label": "Postgres\n(schema: src/schema.sql)",              "type": "database" }
+  ],
+  "edges": [
+    { "from": "scheduler",    "to": "fred_ingest",  "label": "cron (daily/weekly/monthly/quarterly)", "type": "sync" },
+    { "from": "fred_ingest",  "to": "fred_client",  "label": "fetch(series_id)",           "type": "sync" },
+    { "from": "fred_client",  "to": "fred",         "label": "HTTP GET",                   "type": "sync" },
+    { "from": "fred_ingest",  "to": "db",           "label": "upsert observations",        "type": "data" },
+    { "from": "fred_ingest",  "to": "jsonl",        "label": "raw response dump",          "type": "data" },
+    { "from": "fred_ingest",  "to": "backup",       "label": "dump('fred_refresh')",       "type": "sync" },
+    { "from": "fdic_ingest",  "to": "fdic_client",  "label": "fetch mergers (CHANGECODE 223)", "type": "sync" },
+    { "from": "fdic_client",  "to": "fdic",         "label": "HTTP GET",                   "type": "sync" },
+    { "from": "fdic_ingest",  "to": "db",           "label": "upsert acquisitions (book value, acquirer)", "type": "data" },
+    { "from": "edgar_ingest", "to": "edgar_client", "label": "fetch 8-K filings",          "type": "sync" },
+    { "from": "edgar_client", "to": "edgar",        "label": "HTTP GET",                   "type": "sync" },
+    { "from": "edgar_ingest", "to": "db",           "label": "enrich acquisitions (deal price, terms)", "type": "data" },
+    { "from": "backfill",     "to": "db",           "label": "one-shot historical load",   "type": "data" },
+    { "from": "db",           "to": "postgres",     "label": "psycopg2 connection",        "type": "sync" }
+  ]
+}

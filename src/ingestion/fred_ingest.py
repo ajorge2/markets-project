@@ -20,10 +20,10 @@ from backup import dump
 
 
 EXPECTED_UPDATE_DAYS = {
-    "daily":     1,
-    "weekly":    7,
-    "monthly":   35,
-    "quarterly": 100,
+    "daily":     4,    # business-day only series — buffer for Fri→Mon + a holiday
+    "weekly":    10,   # weekly with a ~3-day grace
+    "monthly":   40,
+    "quarterly": 110,
 }
 
 DEFAULT_OUT        = Path(__file__).parent.parent / "data" / "fred_results.jsonl"
@@ -156,6 +156,127 @@ def _update_staleness(cur, series_id: str, latest_vintage: str, latest_value: fl
         """,
         (latest_vintage, latest_value, expected_next, series_id),
     )
+
+
+def backfill_to_floor(floor_date: str = "1990-01-01"):
+    """
+    For every series, fetch the full history from `floor_date` (or as far as FRED
+    has) and insert any rows we don't already have. Idempotent — series that
+    already cover back to the floor are skipped to save API calls.
+    Returns per-series summary [{series_id, added, skipped, error}].
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT r.series_id, MIN(o.observation_date) AS earliest
+        FROM series_registry r
+        LEFT JOIN series_observations o ON o.series_id = r.series_id
+        GROUP BY r.series_id
+        ORDER BY r.series_id
+        """
+    )
+    state = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    summary = []
+    floor = date.fromisoformat(floor_date)
+    for sid, earliest in state:
+        if earliest is not None and earliest <= floor:
+            summary.append({"series_id": sid, "added": 0, "skipped": True, "error": None})
+            continue
+
+        try:
+            rows = get_observations(sid, observation_start=floor_date)
+        except Exception as e:
+            summary.append({"series_id": sid, "added": 0, "skipped": False, "error": str(e)})
+            continue
+
+        if not rows:
+            summary.append({"series_id": sid, "added": 0, "skipped": False, "error": None})
+            continue
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM series_observations WHERE series_id = %s", (sid,))
+        before = cur.fetchone()[0]
+        cur.executemany(
+            """
+            INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
+            VALUES (%(sid)s, %(observation_date)s, %(vintage_date)s, %(value)s)
+            ON CONFLICT (series_id, observation_date, vintage_date) DO NOTHING
+            """,
+            [{"sid": sid, **r} for r in rows],
+        )
+        cur.execute("SELECT COUNT(*) FROM series_observations WHERE series_id = %s", (sid,))
+        after = cur.fetchone()[0]
+        added = after - before
+
+        last = max(rows, key=lambda r: r["vintage_date"])
+        _update_staleness(cur, sid, last["vintage_date"], last["value"])
+        conn.commit()
+        cur.close()
+        conn.close()
+        summary.append({"series_id": sid, "added": added, "skipped": False, "error": None})
+
+    check_staleness()
+    return summary
+
+
+def catch_up():
+    """
+    For each series in the registry, fetch any FRED observations newer than what's
+    already in the DB. One API call per series; only the gap is requested.
+    Returns a per-series summary [{series_id, added, error}].
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT r.series_id, COALESCE(MAX(o.observation_date), DATE '1990-01-01') AS last_date
+        FROM series_registry r
+        LEFT JOIN series_observations o ON o.series_id = r.series_id
+        GROUP BY r.series_id
+        ORDER BY r.series_id
+        """
+    )
+    series_state = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    summary = []
+    for sid, last_date in series_state:
+        start_iso = (last_date + timedelta(days=1)).isoformat()
+        try:
+            rows = get_observations(sid, observation_start=start_iso)
+        except Exception as e:
+            summary.append({"series_id": sid, "added": 0, "error": str(e)})
+            continue
+
+        if not rows:
+            summary.append({"series_id": sid, "added": 0, "error": None})
+            continue
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.executemany(
+            """
+            INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
+            VALUES (%(sid)s, %(observation_date)s, %(vintage_date)s, %(value)s)
+            ON CONFLICT (series_id, observation_date, vintage_date) DO NOTHING
+            """,
+            [{"sid": sid, **r} for r in rows],
+        )
+        last = max(rows, key=lambda r: r["vintage_date"])
+        _update_staleness(cur, sid, last["vintage_date"], last["value"])
+        conn.commit()
+        cur.close()
+        conn.close()
+        summary.append({"series_id": sid, "added": len(rows), "error": None})
+
+    check_staleness()
+    return summary
 
 
 def check_staleness():

@@ -1,0 +1,63 @@
+{
+  "title": "Postgres Schema — markets_project",
+  "zoom": "data",
+  "status": "current",
+  "entities": [
+    {
+      "id": "series_registry",
+      "description": "catalog of indicators",
+      "fields": [
+        { "name": "series_id",        "type": "text (PK)" },
+        { "name": "description",      "type": "text" },
+        { "name": "sector",           "type": "text (banks|consumer|cre|corporate)" },
+        { "name": "signal_speed",     "type": "text (fast|slow|context)" },
+        { "name": "update_frequency", "type": "text (daily|weekly|monthly|quarterly)" },
+        { "name": "fred_series_id",   "type": "text (nullable)" },
+        { "name": "units",            "type": "text" }
+      ]
+    },
+    {
+      "id": "series_observations",
+      "description": "time-series history",
+      "fields": [
+        { "name": "series_id",        "type": "text (FK → series_registry)" },
+        { "name": "observation_date", "type": "date (period covered)" },
+        { "name": "vintage_date",     "type": "date (when published)" },
+        { "name": "value",            "type": "numeric" }
+      ]
+    },
+    {
+      "id": "staleness_state",
+      "description": "freshness tracker",
+      "fields": [
+        { "name": "series_id",          "type": "text (PK, FK → series_registry)" },
+        { "name": "last_vintage_date",  "type": "date" },
+        { "name": "last_value",         "type": "numeric" },
+        { "name": "expected_next_date", "type": "date" },
+        { "name": "status",             "type": "text (fresh|pending|overdue)" }
+      ]
+    },
+    {
+      "id": "acquisitions",
+      "description": "bank M&A deals (separate product)",
+      "fields": [
+        { "name": "company",             "type": "text (PK)" },
+        { "name": "acq_date",            "type": "date (PK)" },
+        { "name": "report_date",         "type": "date" },
+        { "name": "book_value",          "type": "numeric (thousands USD, FDIC EQ)" },
+        { "name": "acquirer_name",       "type": "text" },
+        { "name": "acq_uninum",          "type": "text" },
+        { "name": "deal_price_millions", "type": "numeric" },
+        { "name": "price_per_share",     "type": "numeric" },
+        { "name": "consideration_type",  "type": "text (cash|stock|mixed)" },
+        { "name": "edgar_adsh",          "type": "text (8-K accession)" },
+        { "name": "announcement_date",   "type": "date" },
+        { "name": "acquirer_hc_name",    "type": "text (FDIC NAMEHCR)" }
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "series_observations", "to": "series_registry", "label": "FK series_id",   "cardinality": "many-to-one" },
+    { "from": "staleness_state",     "to": "series_registry", "label": "FK series_id",   "cardinality": "one-to-one" }
+  ]
+}

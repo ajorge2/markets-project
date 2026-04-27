@@ -4,164 +4,2053 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Credit Stress Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Text+Me+One&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      background: #0d1117;
+      font-family: 'Share Tech Mono', 'SF Mono', 'Fira Code', monospace;
+      background: #04060c;
       color: #c9d1d9;
       padding: 32px;
       min-height: 100vh;
+      color-scheme: dark;
     }
 
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      margin-bottom: 40px;
+    }
+
+    .header {
+      flex-shrink: 0;
+      padding-right: 28px;
+      border-right: 1px solid #e6edf3;
+    }
+
+    h1 { white-space: nowrap; }
+
     h1 {
-      font-size: 18px;
-      font-weight: 600;
+      font-family: 'Text Me One', sans-serif;
+      font-size: 44px;
+      font-weight: 400;
       color: #e6edf3;
       letter-spacing: 0.05em;
-      margin-bottom: 4px;
+      margin-bottom: 14px;
+      background: linear-gradient(100deg,
+        #8b949e 0%,
+        #8b949e 35%,
+        #ffffff 48%,
+        #f5f0ff 50%,
+        #ffffff 52%,
+        #8b949e 65%,
+        #8b949e 100%);
+      background-size: 220% 100%;
+      background-position: 150% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titleShimmer 7s linear infinite;
+    }
+    @keyframes titleShimmer {
+      0%   { background-position: 150% 0; }
+      100% { background-position: -50% 0; }
     }
 
     .subtitle {
-      font-size: 12px;
+      font-size: 15px;
       color: #6e7681;
-      margin-bottom: 32px;
+      text-align: center;
+      letter-spacing: -0.08em;
     }
 
     .controls {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .controls .btn-row {
       display: flex;
       gap: 12px;
-      align-items: center;
-      margin-bottom: 32px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      min-height: 26px;
     }
 
     .controls label { font-size: 12px; color: #8b949e; }
 
-    .controls input[type="date"] {
-      background: #161b22;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-family: inherit;
-      font-size: 12px;
+    .hist-group {
+      display: inline-flex;
+      align-items: stretch;
     }
+    .hist-group #btn-historical { box-shadow: none; }
+    .hist-group .date-input {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      border-left: 0;
+      color: #e6edf3;
+      padding: 5px 10px;
+      border-radius: 0;
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      width: 84px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .hist-group .date-input:focus { border-color: #ffffff; }
+    .hist-group .date-input::placeholder { color: #484f58; }
+    .hist-group { box-shadow: 2px 2px 0 #000; }
+    .hist-group:has(button.active) { box-shadow: 2px 2px 0 #3e1d52; }
+
+    .hist-stack {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .controls .hist-nav {
+      display: flex;
+      width: 84px;
+      box-sizing: border-box;
+      box-shadow: 1px 1px 0 #000;
+      align-self: flex-end;
+    }
+    .controls .hist-nav button {
+      flex: 1 1 0;
+      min-width: 0;
+      box-sizing: border-box;
+      background: #0a0f18;
+      border: 1px solid #6e7681;
+      color: #c9d1d9;
+      padding: 0;
+      height: 14px;
+      font-family: inherit;
+      font-size: 7px;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .controls .hist-nav button + button { border-left: 0; }
+    .controls .hist-nav button:hover { border-color: #ffffff; color: #ffffff; background: #0a0f18; }
+    .controls .hist-nav button:has(+ button:hover) { border-right-color: #ffffff; }
+    .controls .hist-nav:active { transform: translate(1px, 1px); box-shadow: 0 0 0 #000; }
+    .hist-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .hist-nav .tri {
+      width: 0; height: 0;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+    }
+    .hist-nav .tri.left  { border-right: 4px solid #c9d1d9; }
+    .hist-nav .tri.right { border-left:  4px solid #c9d1d9; }
+    .hist-nav button:hover .tri.left  { border-right-color: #ffffff; }
+    .hist-nav button:hover .tri.right { border-left-color:  #ffffff; }
+    .hist-nav .tri + .tri { margin-left: -1px; }
 
     .controls button {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
-      padding: 6px 14px;
-      border-radius: 6px;
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 5px 12px;
+      border-radius: 0;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       cursor: pointer;
+      transition: none;
+      box-shadow: 2px 2px 0 #000;
     }
 
-    .controls button:hover { background: #30363d; }
+    .controls button:hover {
+      background: #161b22;
+      border-color: #f0f6fc;
+      color: #ffffff;
+    }
+
+    .controls button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 #000;
+    }
 
     .controls button.active {
-      background: #1f6feb;
-      border-color: #1f6feb;
-      color: white;
+      background: #e6edf3;
+      border-color: #e6edf3;
+      color: #0d1117;
+      box-shadow: 2px 2px 0 #3e1d52;
     }
 
     .as-of {
       font-size: 11px;
       color: #6e7681;
-      margin-left: auto;
+    }
+    .as-of-inline {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .live-stack {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    body.is-loading #sectors-grid,
+    body.is-loading #sector-detail,
+    body.is-loading #graph-view {
+      opacity: 0.35;
+      transition: opacity 120ms ease-out;
+      pointer-events: none;
+    }
+    #sectors-grid, #sector-detail, #graph-view {
+      transition: opacity 120ms ease-out;
+    }
+    #loading-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+    #loading-bar::before {
+      content: "";
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(62, 29, 82, 0.35) 20%,
+        #3e1d52 42%,
+        #9171ad 50%,
+        #3e1d52 58%,
+        rgba(62, 29, 82, 0.35) 80%,
+        transparent 100%);
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    body.is-loading #loading-bar::before {
+      opacity: 1;
+      animation: loadingBarSlide 1.1s linear infinite;
+    }
+    @keyframes loadingBarSlide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
+      gap: 28px;
       margin-bottom: 32px;
     }
 
     .sector-card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 10px;
-      padding: 20px;
+      background: #0a0c14;
+      border: 1px solid #ffffff;
+      border-radius: 0;
+      padding: 24px 26px 22px;
+      box-shadow:
+        6px 6px 0 #000,
+        inset 0 1px 0 #2a3340,
+        inset 0 -1px 0 #05080d;
+      position: relative;
+      cursor: pointer;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out;
     }
 
-    .sector-card .sector-label {
-      font-size: 11px;
-      color: #8b949e;
+    .sector-card:hover {
+      transform: scale(1.025);
+      box-shadow:
+        8px 8px 0 #000,
+        inset 0 1px 0 #3a4452,
+        inset 0 -1px 0 #05080d;
+    }
+
+    .sector-card:hover::before {
+      background: linear-gradient(to right, #ffffff 0%, #c9d1d9 50%, transparent 100%);
+    }
+
+    .sector-card.coming-soon {
+      border-style: dashed;
+      border-color: #6e7681;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 220px;
+      cursor: default;
+    }
+    .sector-card.coming-soon:hover { transform: none; box-shadow: none; }
+
+    .sector-card.coming-soon::before { display: none; }
+
+    .sector-card.coming-soon .cs-eyebrow {
+      font-size: 9.5px;
+      color: #484f58;
+      letter-spacing: 0.3em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
       margin-bottom: 10px;
     }
 
+    .sector-card.coming-soon .cs-title {
+      font-size: 16px;
+      color: #8b949e;
+      letter-spacing: 0.04em;
+    }
+
+    .sector-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #e6edf3 0%, #6e7681 50%, transparent 100%);
+    }
+
+    .sector-card .sector-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    .sector-card .sector-label {
+      font-size: 11.5px;
+      color: #c9d1d9;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 600;
+    }
+
+    .sector-card .sector-code {
+      font-size: 9px;
+      color: #484f58;
+      letter-spacing: 0.15em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sector-card .score-row {
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .sector-card .score-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2px 0 6px;
+    }
+
     .sector-card .sector-score {
-      font-size: 36px;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 12px;
+      font-size: 56px;
+      font-weight: 200;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .sector-card .sector-score,
+    .detail-score {
+      white-space: nowrap;
+    }
+    .sector-card .sector-score .digit,
+    .detail-score .digit {
+      display: inline-block;
+      vertical-align: top;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 100%),
+        linear-gradient(var(--score-color, currentColor), var(--score-color, currentColor));
+      -webkit-background-clip: text;
+              background-clip: text;
+      -webkit-text-fill-color: transparent;
+              text-fill-color: transparent;
+    }
+
+    .sector-card .score-meta {
+      font-size: 10px;
+      color: #6e7681;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
     }
 
     .bar-track {
-      background: #21262d;
-      border-radius: 4px;
-      height: 6px;
-      width: 100%;
-      margin-bottom: 16px;
+      background: #05080d;
+      height: 8px;
+      width: 160px;
+      border: 1px solid #21262d;
+      position: relative;
+      box-shadow: inset 0 1px 2px #000;
+    }
+
+    .bar-track::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc(20% - 1px),
+        #2a3340 calc(20% - 1px),
+        #2a3340 20%
+      );
+      pointer-events: none;
     }
 
     .bar-fill {
-      height: 6px;
-      border-radius: 4px;
+      height: 100%;
+      background-image: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 100%);
       transition: width 0.4s ease;
     }
 
     .sector-card .components {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0;
     }
 
     .component-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
-      padding: 4px 0;
-      border-top: 1px solid #21262d;
+      gap: 10px;
+      font-size: 10.5px;
+      padding: 7px 0;
+      letter-spacing: 0.04em;
     }
 
-    .component-row .comp-label { color: #8b949e; }
-    .component-row .comp-val { color: #e6edf3; }
+    .component-row:first-child {
+      border-top: 1px solid #30363d;
+      padding-top: 12px;
+    }
+
+    .component-row .comp-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      color: #8b949e;
+      text-transform: uppercase;
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
+    }
+    .component-row .comp-label-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .component-row .w-bar {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 2px;
+      background: #1a2030;
+      margin-left: 16px;  /* aligns with text after staleness dot */
+    }
+    .component-row .w-bar-fill {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      background: #a070c0;
+    }
+    .component-row .comp-val {
+      color: #e6edf3;
+      font-variant-numeric: tabular-nums;
+    }
     .component-row .comp-pct {
-      font-size: 10px;
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-weight: 600;
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 0;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.08em;
+      border: 1px solid currentColor;
+      line-height: 1;
+      min-width: 34px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .component-row .comp-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .component-row .comp-val {
+      vertical-align: middle;
     }
 
     .staleness-dot {
       display: inline-block;
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      margin-left: 4px;
-      vertical-align: middle;
+      flex-shrink: 0;
+      background-image: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 100%);
     }
 
-    .staleness-fresh    { background: #238636; }
-    .staleness-pending  { background: #9e6a03; }
-    .staleness-overdue  { background: #da3633; }
-    .staleness-historical { background: #6e7681; }
-    .staleness-no_data  { background: #484f58; }
+    .staleness-fresh    { background-color: #1d3812; }
+    .staleness-pending  { background-color: #9e6a03; }
+    .staleness-overdue  { background-color: #ff8a8a; }
+    .staleness-historical { background-color: #6e7681; }
+    .staleness-no_data  { background-color: #484f58; }
 
     .no-data-msg { color: #484f58; font-style: italic; }
 
     #error-msg {
-      color: #da3633;
+      color: #ff8a8a;
       font-size: 12px;
       margin-bottom: 16px;
       display: none;
+    }
+
+    #sector-detail, #graph-view { display: none; }
+    #btn-back { display: none; }
+    body.detail-mode #sectors-grid { display: none; }
+    body.detail-mode #sector-detail { display: block; }
+    body.detail-mode #grp-all,
+    body.detail-mode #grp-pe,
+    body.detail-mode #grp-credit { display: none; }
+    body.detail-mode #btn-back { display: inline-block; margin-left: auto; }
+
+    body.graph-mode #sectors-grid { display: none; }
+    body.graph-mode #graph-view { display: block; }
+    body.graph-mode #grp-all,
+    body.graph-mode #grp-pe,
+    body.graph-mode #grp-credit,
+    body.graph-mode #btn-graph,
+    body.graph-mode #btn-analyze { display: none; }
+    body.graph-mode #btn-back { display: inline-block; margin-left: auto; }
+
+    #analyze-view { display: none; }
+    .analyze-controls {
+      display: flex;
+      gap: 18px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .analyze-controls label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #6e7681;
+    }
+    .analyze-controls select,
+    .analyze-controls .anly-date {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 0 10px;
+      height: 28px;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 13px;
+      letter-spacing: 0.04em;
+      border-radius: 0;
+      box-shadow: 2px 2px 0 #000;
+      outline: none;
+      min-width: 320px;
+    }
+    .analyze-controls select { padding-right: 28px; appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, #c9d1d9 50%), linear-gradient(-45deg, transparent 50%, #c9d1d9 50%); background-position: calc(100% - 16px) 12px, calc(100% - 11px) 12px; background-size: 5px 5px; background-repeat: no-repeat; }
+
+    .anly-series-picker { position: relative; display: inline-block; }
+    .anly-series-trigger {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 0 28px 0 10px;
+      height: 28px;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 13px;
+      letter-spacing: 0.04em;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+      min-width: 320px;
+      max-width: 460px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background-image: linear-gradient(45deg, transparent 50%, #c9d1d9 50%), linear-gradient(-45deg, transparent 50%, #c9d1d9 50%);
+      background-position: calc(100% - 16px) 12px, calc(100% - 11px) 12px;
+      background-size: 5px 5px;
+      background-repeat: no-repeat;
+    }
+    .anly-series-trigger:hover { border-color: #ffffff; color: #ffffff; }
+    .anly-series-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 30;
+      min-width: 360px;
+      max-width: 520px;
+      max-height: 320px;
+      overflow-y: auto;
+      background: #06090f;
+      border: 1px solid #6e7681;
+      box-shadow: 4px 4px 0 #000;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+      text-align: left;
+    }
+    .anly-series-panel::-webkit-scrollbar { width: 6px; }
+    .anly-series-panel::-webkit-scrollbar-thumb { background: #30363d; }
+    .anly-series-picker.open .anly-series-panel { display: block; }
+    .anly-series-actions {
+      display: flex;
+      justify-content: flex-start;
+      gap: 4px;
+      padding: 6px 8px;
+      border-bottom: 1px solid #1c232c;
+      position: sticky;
+      top: 0;
+      background: #06090f;
+      z-index: 1;
+    }
+    .anly-series-action {
+      background: #0a0f18;
+      border: 1px solid #6e7681;
+      color: #c9d1d9;
+      padding: 3px 10px;
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .anly-series-action:hover { border-color: #ffffff; color: #ffffff; }
+    .analyze-controls .anly-series-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: row;
+      gap: 9px;
+      padding: 7px 10px;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      color: #c9d1d9;
+      cursor: pointer;
+      border-top: 1px solid #1c232c;
+      text-align: left;
+    }
+    .analyze-controls .anly-series-row:first-child { border-top: 0; }
+    .analyze-controls .anly-series-row:hover { background: #0e1422; color: #ffffff; }
+    .anly-series-row input[type=checkbox] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border: 1px solid #6e7681;
+      background: #0a0f18;
+      cursor: pointer;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .anly-series-row input[type=checkbox]:checked {
+      border-color: #9171ad;
+      background: #3e1d52;
+    }
+    .anly-series-row input[type=checkbox]:checked::after {
+      content: '';
+      position: absolute;
+      top: 1px; left: 3px;
+      width: 3px; height: 6px;
+      border-right: 2px solid #e6edf3;
+      border-bottom: 2px solid #e6edf3;
+      transform: rotate(45deg);
+    }
+    .anly-series-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .anly-series-empty { padding: 14px; color: #6e7681; font-size: 11px; }
+    .anly-series-group-label {
+      padding: 8px 14px 4px;
+      color: #a070c0;
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-top: 1px solid #1a2030;
+      background: #0a0e16;
+      position: sticky;
+      top: 0;
+    }
+    .anly-series-group-label:first-child { border-top: 0; }
+
+    .anly-legend {
+      position: absolute;
+      top: 14px;
+      left: 70px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10.5px;
+      color: #c9d1d9;
+      letter-spacing: 0.03em;
+      background: rgba(6, 9, 15, 0.92);
+      border: 1px solid #30363d;
+      box-shadow: 2px 2px 0 #000;
+      padding: 8px 10px;
+      max-width: 260px;
+      user-select: none;
+      cursor: grab;
+      opacity: 0.28;
+      transition: opacity 140ms ease-out;
+    }
+    .anly-legend.active,
+    .anly-legend:hover { opacity: 1; }
+    .anly-legend.dragging { cursor: grabbing; opacity: 1; }
+    .anly-legend-handle { display: none; }
+    .anly-legend.hidden { display: none; }
+    .anly-legend-toggle {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #c9d1d9;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+      flex-shrink: 0;
+    }
+    .anly-legend-toggle:hover { background: #161b22; border-color: #ffffff; color: #ffffff; }
+    .anly-legend-toggle:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+    .anly-legend-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .anly-legend-swatch { width: 14px; height: 3px; flex-shrink: 0; margin-top: 6px; }
+    .anly-legend-id { color: #e6edf3; font-weight: 600; }
+    .anly-legend-desc { color: #8b949e; flex-basis: 100%; padding-left: 22px; line-height: 1.35; }
+
+    .anly-tip-date { color: #8b949e; font-size: 10px; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .anly-tip-row { display: flex; align-items: center; gap: 8px; font-size: 11px; line-height: 1.4; }
+    .anly-tip-swatch { width: 10px; height: 3px; flex-shrink: 0; }
+    .anly-tip-id { color: #c9d1d9; min-width: 80px; }
+    .anly-tip-val { color: #e6edf3; font-variant-numeric: tabular-nums; margin-left: auto; }
+    .analyze-controls .anly-date { min-width: 120px; width: 120px; box-shadow: none; }
+    .analyze-controls .anly-date-group {
+      display: inline-flex;
+      align-items: stretch;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .analyze-controls .anly-date-group .anly-date { border-right: 0; }
+    .analyze-controls .anly-date-jump {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #c9d1d9;
+      padding: 0 10px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .analyze-controls .anly-date-jump:hover { background: #161b22; border-color: #ffffff; color: #ffffff; }
+    .analyze-controls .anly-date-jump:active { transform: translate(1px, 1px); }
+    .analyze-controls .anly-plot-btn {
+      align-self: flex-end;
+      height: 28px;
+      padding: 0 18px;
+      line-height: 13px;
+      box-sizing: border-box;
+    }
+    .anly-saved-picker { position: relative; align-self: flex-end; }
+    .anly-saved-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      z-index: 30;
+      min-width: 320px;
+      max-width: 460px;
+      max-height: 320px;
+      overflow-y: auto;
+      background: #06090f;
+      border: 1px solid #6e7681;
+      box-shadow: 4px 4px 0 #000;
+      text-align: left;
+    }
+    .anly-saved-picker.open .anly-saved-panel { display: block; }
+    .analyze-controls .anly-saved-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-top: 1px solid #1c232c;
+      cursor: pointer;
+      color: #c9d1d9;
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+    .analyze-controls .anly-saved-row:first-child { border-top: 0; }
+    .analyze-controls .anly-saved-row:hover { background: #0e1422; color: #ffffff; }
+    .analyze-controls .anly-saved-meta { min-width: 0; }
+    .analyze-controls .anly-saved-name {
+      font-size: 11px;
+      color: #e6edf3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .analyze-controls .anly-saved-sub {
+      font-size: 10px;
+      color: #8b949e;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .analyze-controls .anly-saved-del {
+      background: transparent;
+      border: 0;
+      color: #6e7681;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+      box-shadow: none;
+      flex-shrink: 0;
+    }
+    .analyze-controls .anly-saved-del:hover { color: #ff8a8a; }
+    .anly-saved-empty { padding: 14px; color: #6e7681; font-size: 11px; }
+    .analyze-controls select:focus,
+    .analyze-controls .anly-date:focus { border-color: #ffffff; }
+    .anly-chart {
+      border: 1px solid #30363d;
+      padding: 18px 20px 14px;
+      background: #0a0c14;
+      box-shadow: 6px 6px 0 #000;
+    }
+    .anly-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .anly-tooltip {
+      position: absolute;
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      box-shadow: 2px 2px 0 #000;
+      color: #e6edf3;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      padding: 5px 9px;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    body.analyze-mode #sectors-grid { display: none; }
+    body.analyze-mode #analyze-view { display: block; }
+    body.analyze-mode #grp-all,
+    body.analyze-mode #grp-pe,
+    body.analyze-mode #grp-credit,
+    body.analyze-mode #btn-graph,
+    body.analyze-mode #btn-analyze { display: none; }
+    body.analyze-mode #btn-back { display: inline-block; margin-left: auto; }
+
+    .graph-placeholder {
+      border: 1px solid #6e7681;
+      min-height: 360px;
+      padding: 28px;
+      color: #6e7681;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .data-title {
+      font-family: 'Text Me One', sans-serif;
+      font-size: 26px;
+      color: #e6edf3;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .data-subtitle {
+      font-size: 11px;
+      color: #8b949e;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #0a0c14;
+      border: 1px solid #30363d;
+      font-size: 11px;
+      color: #c9d1d9;
+    }
+    .data-table th, .data-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #1c232c;
+      letter-spacing: 0.04em;
+    }
+    .data-table th {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #6e7681;
+      font-weight: 600;
+      background: #06090f;
+      border-bottom: 1px solid #30363d;
+      position: sticky;
+      top: 0;
+    }
+    .data-table tbody tr:hover { background: #11161f; }
+    .data-table.clickable tbody tr { cursor: pointer; }
+    .data-table .mono { font-variant-numeric: tabular-nums; }
+    .data-table .num { font-variant-numeric: tabular-nums; text-align: right; }
+    .data-table .desc { color: #e6edf3; max-width: 320px; }
+    .data-back-btn {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 5px 12px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .data-back-btn:hover { background: #161b22; border-color: #ffffff; }
+    .data-back-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+    .data-catchup-btn {
+      background: #0a0f18;
+      border: 1px solid #a070c0;
+      color: #a070c0;
+      padding: 5px 14px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #2a1138;
+      margin-left: auto;
+    }
+    .data-catchup-btn:hover { color: #b890d0; border-color: #b890d0; }
+    .data-catchup-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #2a1138; }
+    .data-catchup-btn:disabled { opacity: 0.5; cursor: wait; }
+    .data-catchup-result {
+      font-size: 10.5px;
+      color: #8b949e;
+      letter-spacing: -0.04em;
+      margin-top: 8px;
+    }
+    .data-catchup-result.success { color: #c9d1d9; }
+    .data-history-wrap { max-height: 70vh; overflow-y: auto; border: 1px solid #30363d; }
+    .data-history-wrap::-webkit-scrollbar { width: 8px; }
+    .data-history-wrap::-webkit-scrollbar-track { background: transparent; }
+    .data-history-wrap::-webkit-scrollbar-thumb { background: #30363d; }
+    .data-history-wrap .data-table { border: 0; }
+
+    .data-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #30363d;
+      margin-bottom: 22px;
+    }
+    .data-tab {
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      color: #8b949e;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      cursor: pointer;
+      margin-bottom: -1px;
+    }
+    .data-tab:hover { color: #e6edf3; }
+    .data-tab.active {
+      color: #e6edf3;
+      border-bottom-color: #e6edf3;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 4, 8, 0.78);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #0a0c14;
+      border: 1px solid #ffffff;
+      box-shadow: 6px 6px 0 #000, inset 0 1px 0 #2a3340, inset 0 -1px 0 #05080d;
+      padding: 28px 32px 24px;
+      min-width: 360px;
+      max-width: 440px;
+      position: relative;
+    }
+    .modal::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #ffffff 0%, #6e7681 50%, transparent 100%);
+    }
+    .modal-eyebrow {
+      font-size: 9.5px;
+      color: #6e7681;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .modal-title {
+      font-family: 'Text Me One', sans-serif;
+      font-size: 26px;
+      color: #e6edf3;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .modal-body {
+      font-size: 12px;
+      color: #8b949e;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-actions button {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 6px 18px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+      transition: none;
+    }
+    .modal-actions button:hover { background: #161b22; border-color: #ffffff; color: #ffffff; }
+    .modal-actions button:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+    .modal-actions button.primary {
+      border-color: #a070c0;
+      color: #a070c0;
+      box-shadow: 2px 2px 0 #2a1138;
+    }
+    .modal-actions button.primary:hover { color: #b890d0; border-color: #b890d0; }
+    .modal-actions button.danger {
+      border-color: #ff8a8a;
+      color: #ff8a8a;
+      box-shadow: 2px 2px 0 #4a1010;
+    }
+    .modal-actions button.danger:hover { color: #ffb0b0; border-color: #ffb0b0; }
+
+    .version-list {
+      max-height: 280px;
+      overflow-y: auto;
+      border: 1px solid #30363d;
+      margin-bottom: 18px;
+    }
+    .version-list .v-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      border-top: 1px solid #1c232c;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      color: #c9d1d9;
+      font-variant-numeric: tabular-nums;
+    }
+    .version-list .v-row:first-child { border-top: 0; }
+    .version-list .v-row .ts { color: #8b949e; }
+    .version-list .v-row .v-tag {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .version-list .v-row .v-del {
+      background: #0a0f18;
+      border: 1px solid #ff8a8a;
+      color: #ff8a8a;
+      padding: 3px 10px;
+      font-family: inherit;
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 1px 1px 0 #4a1010;
+    }
+    .version-list .v-row .v-del:hover { color: #ffb0b0; border-color: #ffb0b0; }
+    .version-list .v-row .v-del:active { transform: translate(1px, 1px); box-shadow: 0 0 0 #4a1010; }
+
+    .name-input {
+      width: 100%;
+      background: #04060c;
+      border: 1px solid #6e7681;
+      color: #e6edf3;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      margin-bottom: 18px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .name-input:focus { border-color: #a070c0; }
+
+    .indicator-modal { max-width: 520px; min-width: 440px; }
+    .indicator-modal .ind-modal-title {
+      font-family: 'Text Me One', sans-serif;
+      font-size: 22px;
+      color: #e6edf3;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .indicator-modal .ind-modal-desc {
+      font-size: 11px;
+      color: #8b949e;
+      letter-spacing: -0.04em;
+      margin-bottom: 18px;
+    }
+    .indicator-modal .ind-modal-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .indicator-modal .ind-modal-value {
+      font-size: 46px;
+      font-weight: 200;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: #e6edf3;
+    }
+    .indicator-modal .ind-modal-value-meta {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #6e7681;
+    }
+    .indicator-modal .ind-modal-obs {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: #6e7681;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .indicator-modal .ind-modal-help {
+      font-size: 10.5px;
+      letter-spacing: -0.02em;
+      color: #8b949e;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .indicator-modal .ind-modal-stress {
+      padding: 14px 0;
+      border-top: 1px solid #30363d;
+      margin-bottom: 0;
+    }
+    .indicator-modal .ind-modal-stress .stress-label {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #6e7681;
+      margin-bottom: 8px;
+    }
+    .indicator-modal .ind-modal-stress .stress-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .indicator-modal .ind-modal-stress .stress-help {
+      font-size: 10.5px;
+      letter-spacing: -0.02em;
+      color: #8b949e;
+      line-height: 1.5;
+      flex: 1;
+    }
+    .indicator-modal .ind-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 24px;
+      padding: 14px 0;
+      border-top: 1px solid #30363d;
+      border-bottom: 1px solid #30363d;
+      margin-bottom: 18px;
+    }
+    .indicator-modal .ind-modal-grid .label {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #6e7681;
+    }
+    .indicator-modal .ind-modal-grid .val {
+      font-size: 13px;
+      color: #e6edf3;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+    .indicator-modal .ind-modal-grid .val.modified { color: #ff8a8a; }
+    .indicator-modal .pct-chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      border: 1px solid currentColor;
+      font-variant-numeric: tabular-nums;
+      min-width: 38px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .indicator-modal .staleness-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    #btn-back {
+      border-color: #ff8a8a !important;
+      color: #ff8a8a !important;
+      box-shadow: 2px 2px 0 #4a1010 !important;
+    }
+    #btn-back:hover {
+      background: #1a0a0a !important;
+      border-color: #ffb0b0 !important;
+      color: #ffb0b0 !important;
+    }
+
+    .detail-back {
+      background: #0a0f18;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+      margin-bottom: 28px;
+    }
+    .detail-back:hover { background: #161b22; }
+    .detail-back:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+
+    .detail-top {
+      display: flex;
+      gap: 80px;
+      align-items: stretch;
+      margin-bottom: 36px;
+    }
+    .detail-top-left { flex: 0 0 540px; width: 540px; }
+    .detail-graph-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .detail-graph-title {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #c9d1d9;
+      margin-bottom: 12px;
+    }
+    .detail-graph-title .g { text-transform: none; }
+    .detail-graph-wrap .detail-placeholder { flex: 1; min-width: 0; }
+    .history-dropdown {
+      position: absolute;
+      top: 12px; left: 12px;
+      z-index: 5;
+    }
+    .history-trigger {
+      background: rgba(10, 15, 24, 0.85);
+      border: 1px solid #6e7681;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      cursor: pointer;
+      box-shadow: 1px 1px 0 #000;
+    }
+    .history-trigger:hover { border-color: #c9d1d9; color: #ffffff; }
+    .history-panel {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 100%;
+      margin-right: 6px;
+      z-index: 20;
+      min-width: 240px;
+      max-width: 340px;
+      background: #06090f;
+      border: 1px solid #6e7681;
+      box-shadow: -4px 4px 0 #000;
+      max-height: 260px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    .history-panel::-webkit-scrollbar { width: 6px; }
+    .history-panel::-webkit-scrollbar-track { background: transparent; }
+    .history-panel::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 0;
+    }
+    .history-panel::-webkit-scrollbar-thumb:hover { background: #484f58; }
+    .history-panel.open { display: block; }
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      color: #c9d1d9;
+      cursor: pointer;
+      border-top: 1px solid #1c232c;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .history-row:first-child { border-top: 0; }
+    .history-row:hover { background: #0e1422; color: #ffffff; }
+    .history-row .ts { color: #8b949e; }
+    .history-row.selected {
+      background: #11161f;
+      color: #ffffff;
+    }
+    .history-row.selected .ts { color: #c9d1d9; }
+    .history-row .check {
+      color: #a070c0;
+      font-weight: 700;
+      margin-right: 4px;
+      display: inline-block;
+      width: 10px;
+    }
+    .history-row .row-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .history-row .row-del {
+      background: transparent;
+      border: 0;
+      color: #6e7681;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 2px;
+    }
+    .history-row .row-del:hover { color: #ff8a8a; }
+    .history-row .row-edit {
+      background: transparent;
+      border: 1px solid #6e7681;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .history-row .row-edit:hover { color: #ffffff; border-color: #ffffff; }
+    .history-row .v-name {
+      padding: 1px 3px;
+      border-radius: 0;
+    }
+    .history-row .v-name:hover { outline: 1px solid #6e7681; }
+    .history-row.empty { cursor: default; color: #6e7681; font-style: italic; justify-content: center; }
+    .history-row.empty:hover { background: transparent; color: #6e7681; }
+
+    .detail-placeholder {
+      flex: 1;
+      border: 1px solid #6e7681;
+      min-height: 220px;
+      background:
+        radial-gradient(ellipse 60% 50% at 25% 18%, rgba(96, 110, 150, 0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 78% 82%, rgba(50, 70, 110, 0.10) 0%, transparent 70%),
+        radial-gradient(ellipse 80% 35% at 50% 0%,  rgba(160, 175, 210, 0.05) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 60% 50%, rgba(20, 30, 55, 0.40) 0%, transparent 75%),
+        linear-gradient(180deg, #060912 0%, #04070d 100%);
+      position: relative;
+      transition: background 350ms ease-out, border-color 350ms ease-out;
+    }
+    .detail-placeholder.viewing-version {
+      border-color: #7a8da6;
+      background:
+        radial-gradient(ellipse 65% 55% at 25% 22%, rgba(255, 255, 255, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at 78% 78%, rgba(255, 255, 255, 0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 90% 40% at 50% 0%,  rgba(255, 255, 255, 0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 60% 55%, rgba(140, 160, 190, 0.12) 0%, transparent 70%),
+        linear-gradient(180deg, #1f2a3b 0%, #131c2a 100%);
+    }
+    .axis-y, .axis-x {
+      position: absolute;
+      background: #c9d1d9;
+      transform-origin: 0 0;
+    }
+    .axis-y {
+      left: 68px; top: 35px; bottom: 42px;
+      width: 1px;
+      transform: scaleX(0.6);
+    }
+    .axis-x {
+      bottom: 42px; left: 68px; right: 68px;
+      height: 1px;
+      transform: scaleY(0.6);
+    }
+    .arrow-y {
+      position: absolute;
+      top: 28px; left: 65px;
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 7px solid #c9d1d9;
+    }
+    .arrow-x {
+      position: absolute;
+      bottom: 39px; right: 61px;
+      width: 0; height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 7px solid #c9d1d9;
+    }
+    .ticks-x {
+      position: absolute;
+      left: 68px; right: 68px;
+      bottom: 38px;
+      height: 8px;
+      pointer-events: none;
+    }
+    .ticks-x .tick {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: #c9d1d9;
+      transform: scaleX(0.6) translateX(-50%);
+    }
+    .ticks-y {
+      position: absolute;
+      left: 68px;
+      top: 42px; bottom: 42px;
+      width: 1px;
+      pointer-events: none;
+    }
+    .ticks-y .tick-y {
+      position: absolute;
+      left: 0;
+      width: 8px;
+      height: 1px;
+      background: #6e7681;
+      transform: translate(-50%, 50%);
+    }
+    .ticks-y .tick-y.zero {
+      width: 100%;
+      left: 0;
+      transform: translateY(50%);
+      background: #444c56;
+    }
+    .labels-y {
+      position: absolute;
+      left: 0;
+      top: 42px; bottom: 42px;
+      width: 62px;
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .labels-y .label-y {
+      position: absolute;
+      right: 0;
+      font-size: 9px;
+      color: #8b949e;
+      letter-spacing: 0.05em;
+      transform: translateY(50%);
+      line-height: 1;
+    }
+    .data-lines {
+      position: absolute;
+      left: 68px; right: 68px;
+      top: 42px; bottom: 42px;
+      pointer-events: none;
+    }
+    .data-lines .data-line {
+      position: absolute;
+      top: 1px; bottom: 0;
+      width: 1px;
+      background: #3e1d52;
+      transform: translateX(-50%);
+      pointer-events: auto;
+    }
+    .data-lines .data-cap {
+      position: absolute;
+      top: 0;
+      width: 9px;
+      height: 1px;
+      background: #c9d1d9;
+      transform: translateX(-50%);
+    }
+    .data-lines .default-mark {
+      position: absolute;
+      width: 11px;
+      height: 1px;
+      background: #ff8a8a;
+      transform: translate(-50%, 50%);
+      pointer-events: none;
+    }
+    .data-lines .knob {
+      position: absolute;
+      width: 16px;
+      height: 9px;
+      background: #f0f6fc;
+      border: 1px solid #ffffff;
+      box-shadow: 1px 1px 0 #000, inset 0 1px 0 #ffffff, inset 0 -1px 0 #6e7681;
+      transform: translate(-50%, 50%);
+      cursor: ns-resize;
+      pointer-events: auto;
+      user-select: none;
+    }
+    .data-lines .weight-label {
+      position: absolute;
+      top: -16px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #c9d1d9;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      transform: translateX(-50%);
+      line-height: 1;
+      pointer-events: auto;
+      cursor: text;
+      white-space: nowrap;
+      padding: 1px 2px;
+      user-select: none;
+    }
+    .data-lines .weight-label.modified { color: #ff8a8a; }
+    .data-lines .weight-label:hover {
+      outline: 1px solid #ffffff;
+    }
+    .data-lines .weight-label[contenteditable="true"],
+    .data-lines .weight-label[contenteditable="true"]:hover {
+      outline: 1px solid #3e1d52;
+      background: #0a0c14;
+      cursor: text;
+      user-select: text;
+    }
+    body.knob-dragging { cursor: ns-resize; user-select: none; }
+
+    .detail-header {
+      margin-bottom: 6px;
+    }
+    .detail-title {
+      font-family: 'Text Me One', sans-serif;
+      font-size: 30px;
+      color: #e6edf3;
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+    }
+    .detail-group {
+      display: inline-block;
+      font-family: 'Share Tech Mono', 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      color: #6e7681;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      border: 1px solid #30363d;
+      padding: 3px 8px;
+      vertical-align: middle;
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+
+    .detail-score-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 18px;
+      margin: 24px 0 36px;
+    }
+    .detail-score {
+      font-size: 96px;
+      font-weight: 200;
+      line-height: 0.85;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .detail-score-meta {
+      font-size: 12px;
+      color: #6e7681;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding-bottom: 6px;
+    }
+    .detail-bar {
+      flex: 1;
+      max-width: 360px;
+      height: 14px;
+      background: #05080d;
+      border: 1px solid #21262d;
+      box-shadow: inset 0 1px 2px #000;
+      position: relative;
+      margin-bottom: 4px;
+    }
+    .detail-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc(20% - 1px),
+        #2a3340 calc(20% - 1px),
+        #2a3340 20%
+      );
+      pointer-events: none;
+    }
+    .detail-bar-fill {
+      height: 100%;
+      background-image: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 100%);
+    }
+
+    .detail-save-row-wrap {
+      display: flex;
+      gap: 80px;
+      margin: -16px 0 24px;
+    }
+    .detail-save-row-spacer { flex: 0 0 540px; }
+    .detail-save-row {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 32px;
+    }
+    .save-status {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #6e7681;
+      margin-right: auto;
+    }
+    .save-status.dirty { color: #ff8a8a; }
+    .detail-save-btn, .detail-reset-btn, .detail-discard-btn {
+      background: #0a0f18;
+      padding: 6px 18px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .detail-discard-btn {
+      display: none;
+      border: 1px solid #c9d1d9;
+      color: #e6edf3;
+      box-shadow: 2px 2px 0 #000;
+    }
+    .detail-discard-btn.visible { display: inline-block; }
+    .detail-discard-btn:hover { background: #161b22; border-color: #ffffff; color: #ffffff; }
+    .detail-discard-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+    .detail-save-btn {
+      display: none;
+      border: 1px solid #a070c0;
+      color: #a070c0;
+      box-shadow: 2px 2px 0 #2a1138;
+    }
+    .detail-save-btn.visible { display: inline-block; }
+    .detail-save-btn:hover { color: #b890d0; border-color: #b890d0; }
+    .detail-save-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #2a1138; }
+    .detail-reset-btn {
+      border: 1px solid #ff8a8a;
+      color: #ff8a8a;
+      box-shadow: 2px 2px 0 #4a1010;
+    }
+    .detail-reset-btn:hover { color: #ffb0b0; border-color: #ffb0b0; }
+    .detail-reset-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #4a1010; }
+
+    .detail-section-label {
+      font-size: 10px;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #30363d;
+    }
+    .detail-indicators {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .detail-ind {
+      background: #0a0c14;
+      border: 1px solid #30363d;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: transform 120ms ease-out, border-color 120ms ease-out, box-shadow 120ms ease-out;
+      position: relative;
+    }
+    .detail-ind:hover {
+      transform: scale(1.025);
+      border-color: #c9d1d9;
+      box-shadow: 4px 4px 0 #000;
+    }
+    .detail-ind::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border: 1px solid #a070c0;
+      box-shadow: 0 0 18px 3px rgba(160, 112, 192, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 800ms ease-out;
+    }
+    .detail-ind.glow::after {
+      opacity: 1;
+      transition: opacity 80ms ease-out;
+    }
+    .detail-ind-label {
+      font-size: 10px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ind-weight {
+      margin-left: auto;
+      font-size: 10px;
+      color: #e6edf3;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .ind-weight.modified { color: #ff8a8a; }
+    .ind-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 4px;
+      border: 1px solid #6e7681;
+      color: #c9d1d9;
+      font-size: 9px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.05em;
+      box-sizing: border-box;
+    }
+    .labels-x {
+      position: absolute;
+      left: 68px; right: 68px;
+      bottom: 22px;
+      height: 12px;
+      pointer-events: none;
+    }
+    .labels-x .label-x {
+      position: absolute;
+      top: 0;
+      font-size: 9px;
+      color: #8b949e;
+      letter-spacing: 0.05em;
+      transform: translateX(-50%);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      pointer-events: auto;
+    }
+    .detail-ind-full {
+      font-size: 10.5px;
+      color: #6e7681;
+      margin-bottom: 10px;
+      letter-spacing: 0;
+    }
+    .detail-ind-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .detail-ind-val {
+      font-size: 18px;
+      color: #e6edf3;
+      font-variant-numeric: tabular-nums;
+    }
+    .detail-ind-pct {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border: 1px solid currentColor;
+      min-width: 42px;
+      text-align: center;
+      box-sizing: border-box;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Regression workflow wizard (lives inside analyze-view when active) */
+    .reg-flow { padding: 0; }
+    .reg-flow .reg-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .reg-flow .reg-header > div:first-child { flex: 1; }
+    .reg-flow .reg-header .data-title { margin: 0; }
+    .reg-flow .reg-step-nav {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border-bottom: 1px solid #30363d;
+      margin: 18px 0 22px;
+    }
+    .reg-flow .reg-step-tabs {
+      display: flex;
+      flex: 1;
+      gap: 0;
+    }
+    .reg-flow .reg-step-tab {
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      color: #6e7681;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      cursor: pointer;
+      margin-bottom: -1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .reg-flow .reg-step-tab .reg-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #6e7681;
+      font-size: 9px;
+    }
+    .reg-flow .reg-step-tab:hover { color: #c9d1d9; }
+    .reg-flow .reg-step-tab.active { color: #e6edf3; border-bottom-color: #a070c0; }
+    .reg-flow .reg-step-tab.active .reg-step-num { border-color: #a070c0; color: #a070c0; }
+    .reg-flow .reg-step-body { min-height: 320px; }
+    .reg-flow .reg-explainer {
+      font-size: 12px;
+      color: #c9d1d9;
+      letter-spacing: -0.02em;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      max-width: 780px;
+    }
+    .reg-flow .reg-explainer strong { color: #e6edf3; font-weight: 600; }
+    .reg-flow .reg-explainer code {
+      font-family: inherit;
+      background: #0a0c14;
+      border: 1px solid #30363d;
+      padding: 1px 5px;
+      font-size: 10.5px;
+      color: #c9d1d9;
+    }
+    .reg-flow .reg-step-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid #30363d;
+    }
+    .reg-flow .reg-run-btn {
+      background: #0a0f18;
+      border: 1px solid #a070c0;
+      color: #a070c0;
+      padding: 10px 24px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #2a1138;
+    }
+    .reg-flow .reg-run-btn:hover { color: #b890d0; border-color: #b890d0; }
+    .reg-flow .reg-run-btn:disabled { opacity: 0.4; cursor: wait; }
+    .reg-flow .reg-status {
+      font-size: 11px;
+      color: #8b949e;
+      letter-spacing: -0.04em;
+      margin-top: 12px;
+      max-width: 780px;
+      line-height: 1.5;
+    }
+    .reg-flow .reg-status.error { color: #ff8a8a; }
+    .reg-flow .reg-status.success { color: #c9d1d9; }
+    .reg-flow .reg-results { margin-top: 18px; }
+    .reg-flow pre.reg-log {
+      background: #06090f;
+      border: 1px solid #1c232c;
+      color: #8b949e;
+      padding: 12px;
+      max-height: 220px;
+      overflow: auto;
+      font-size: 10.5px;
+      letter-spacing: 0;
+      white-space: pre-wrap;
+    }
+    .reg-flow .reg-weights-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      letter-spacing: 0.04em;
+      color: #c9d1d9;
+    }
+    .reg-flow .reg-weights-table th {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #6e7681;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #30363d;
+    }
+    .reg-flow .reg-weights-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #1c232c;
+      font-variant-numeric: tabular-nums;
+    }
+    .reg-flow .reg-weights-table td.num,
+    .reg-flow .reg-weights-table th.num { text-align: right; }
+    .reg-flow .reg-weights-table tr:hover { background: #0e1422; }
+    .reg-flow .reg-nav-btn {
+      background: transparent;
+      color: #6e7681;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      padding: 0 14px;
+      font-family: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .reg-flow .reg-nav-btn:hover:not(:disabled) { color: #e6edf3; }
+    .reg-flow .reg-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    /* Alpha slider — global (top) and per-sector (detail page) */
+    .alpha-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding: 12px 18px;
+      border: 1px solid #30363d;
+      background: #0a0c14;
+    }
+    body.detail-mode .alpha-slider-row,
+    body.graph-mode .alpha-slider-row,
+    body.analyze-mode .alpha-slider-row { display: none; }
+    .alpha-slider-row .alpha-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #8b949e;
+    }
+    .alpha-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: #a070c0;
+      max-width: 480px;
+    }
+    .alpha-slider-row .alpha-value {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: #c9d1d9;
+      font-variant-numeric: tabular-nums;
+      min-width: 64px;
+      text-align: right;
+    }
+    .sector-alpha-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      border: 1px solid #30363d;
+      background: rgba(10, 12, 20, 0.6);
+    }
+    .sector-alpha-row .alpha-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #8b949e;
+    }
+    .sector-alpha-row input[type="range"] {
+      flex: 1;
+      accent-color: #a070c0;
+      max-width: 240px;
+    }
+    .sector-alpha-row .alpha-value {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: #c9d1d9;
+      font-variant-numeric: tabular-nums;
+      min-width: 56px;
+      text-align: right;
     }
 
     /* Color scale: low stress = green, high stress = red */
@@ -169,36 +2058,284 @@
 </head>
 <body>
 
-<h1>Credit Stress Dashboard</h1>
-<p class="subtitle">Early warning system for credit conditions across FIG sectors</p>
+<div class="top-row">
+  <div class="header">
+    <h1>Credit Stress Dashboard</h1>
+    <p class="subtitle">Real-time and historical stress signals across sectors</p>
+  </div>
 
-<div class="controls">
-  <button id="btn-live" class="active" onclick="loadLive()">Live</button>
-  <label>Historical:</label>
-  <input type="date" id="date-picker" value="2008-09-01">
-  <button onclick="loadHistorical()">Load</button>
-  <span class="as-of" id="as-of-label"></span>
+  <div class="controls">
+    <div class="btn-row">
+      <span class="live-stack">
+        <button id="btn-live" class="active" onclick="loadLive()">Live</button>
+        <span class="as-of as-of-inline" id="as-of-label"></span>
+      </span>
+      <span class="hist-stack">
+        <span class="hist-group">
+          <button id="btn-historical" onclick="loadHistorical()">Historical</button>
+          <input type="text" id="date-picker" class="date-input" placeholder="  /  /    " maxlength="10" inputmode="numeric" autocomplete="off" value="09/01/2008">
+        </span>
+        <span class="hist-nav">
+          <button id="btn-first-day" title="Earliest available date" onclick="jumpHistDate('first')"><span class="tri left"></span><span class="tri left"></span></button>
+          <button id="btn-prev-day" title="Previous day" onclick="shiftHistDate(-1)"><span class="tri left"></span></button>
+          <button id="btn-next-day" title="Next day" onclick="shiftHistDate(1)"><span class="tri right"></span></button>
+          <button id="btn-last-day" title="Today" onclick="jumpHistDate('last')"><span class="tri right"></span><span class="tri right"></span></button>
+        </span>
+      </span>
+      <button id="grp-all"    class="active" style="margin-left:auto" onclick="setGroup(null)">All</button>
+      <button id="grp-pe"                    onclick="setGroup('pe')">PE</button>
+      <button id="grp-credit"                onclick="setGroup('credit')">Credit</button>
+      <button id="btn-back" onclick="leaveDetail()">← Back</button>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <button id="btn-graph" style="margin-left:auto" onclick="enterGraphView()">View Data</button>
+      <button id="btn-analyze" onclick="enterAnalyzeView()">Analyze Data</button>
+    </div>
+  </div>
 </div>
 
+<div id="loading-bar" aria-hidden="true"></div>
 <div id="error-msg"></div>
+
+<div class="alpha-slider-row" id="alpha-row">
+  <span class="alpha-label">Equity</span>
+  <input type="range" id="alpha-slider" min="0" max="1" step="0.01" value="0.5">
+  <span class="alpha-label">Credit</span>
+  <span class="alpha-value" id="alpha-value">α = 0.50</span>
+</div>
+
 <div class="grid" id="sectors-grid"></div>
+<div id="sector-detail"></div>
+<div id="graph-view"></div>
+<div id="analyze-view"></div>
+
+<div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-title">Save changes?</div>
+    <div class="modal-body">You've adjusted indicator weights for this sector. Save them before leaving?</div>
+    <div class="modal-actions">
+      <button id="confirm-stay">Stay on Page</button>
+      <button id="confirm-no" class="danger">Discard</button>
+      <button id="confirm-yes" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="evict-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-title">History is full</div>
+    <div class="modal-body">10 saved versions per sector is the max. Delete one to make room for this save.</div>
+    <div class="version-list" id="evict-list"></div>
+    <div class="modal-actions">
+      <button id="evict-cancel">Cancel Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="name-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-title">Name this version</div>
+    <div class="modal-body">Give this weight set a label so you can recognize it later.</div>
+    <input type="text" class="name-input" id="name-input" placeholder="e.g. Recession-conservative" maxlength="60">
+    <div class="modal-actions">
+      <button id="name-cancel">Cancel</button>
+      <button id="name-confirm" class="primary">Save Weights</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="simple-confirm-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-title" id="sc-title">Confirm</div>
+    <div class="modal-body" id="sc-body">Are you sure?</div>
+    <div class="modal-actions">
+      <button id="sc-no">Cancel</button>
+      <button id="sc-yes" class="danger">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="indicator-modal" role="dialog" aria-modal="true">
+  <div class="modal indicator-modal" id="indicator-modal-content"></div>
+</div>
 
 <script>
   const API = 'http://localhost:8000';
 
+  let currentData = null;
+  let liveCache = null;      // last successful /dashboard/current response
+  let currentGroup = null;   // null | 'pe' | 'credit'
+  let sectorOrder = [];      // populated from /sectors on first load
+  let currentSectorKey = null;
+  let pendingWeights = {};   // { series_id: weight } — staged changes for the sector currently open
+  let selectedVersionId = null;  // explicitly-clicked history version, if any
+  let stashedWeights = null;     // pendingWeights snapshot taken right before viewing a saved version
+  let editingVersionId = null;   // when set, edits go into this version, not "current"
+  let editingVersionWeights = null; // base weights for the version being edited
+  let editEntryMode = null;      // 'save' | 'manual' — how the user landed in edit mode
+  let hasInteracted = false;     // shows save status only after the user has actually done something
+
+  // Alpha (equity ↔ credit blend). Persisted globally + per sector.
+  const ALPHA_GLOBAL_KEY = 'markets.alpha.global.v1';
+  const ALPHA_SECTOR_PREFIX = 'markets.alpha.sector.';
+  let alphaGlobal = 0.5;
+  // Sectors with sub-sector credit ground truth → these are the only ones that get a per-sector slider
+  const ALPHA_SECTOR_CAPABLE = new Set([
+    'lending_and_markets',
+    'real_estate_finance_and_services',
+    'financial_services',
+    'business_services',
+  ]);
+
+  function readAlphaGlobal() {
+    try {
+      const v = parseFloat(localStorage.getItem(ALPHA_GLOBAL_KEY));
+      if (!isNaN(v) && v >= 0 && v <= 1) return v;
+    } catch (_) {}
+    return 0.5;
+  }
+  function writeAlphaGlobal(v) {
+    try { localStorage.setItem(ALPHA_GLOBAL_KEY, String(v)); } catch (_) {}
+  }
+  function readAlphaForSector(sid) {
+    try {
+      const v = parseFloat(localStorage.getItem(ALPHA_SECTOR_PREFIX + sid));
+      if (!isNaN(v) && v >= 0 && v <= 1) return v;
+    } catch (_) {}
+    return null;  // null means "use global"
+  }
+  function writeAlphaForSector(sid, v) {
+    try { localStorage.setItem(ALPHA_SECTOR_PREFIX + sid, String(v)); } catch (_) {}
+  }
+  function clearAllSectorAlphas() {
+    try {
+      for (const sid of ALPHA_SECTOR_CAPABLE) {
+        localStorage.removeItem(ALPHA_SECTOR_PREFIX + sid);
+      }
+    } catch (_) {}
+  }
+  function buildAlphaOverrides() {
+    const out = {};
+    for (const sid of ALPHA_SECTOR_CAPABLE) {
+      const v = readAlphaForSector(sid);
+      if (v !== null && Math.abs(v - alphaGlobal) > 1e-9) out[sid] = v;
+    }
+    return out;
+  }
+
+  const CACHE_DASHBOARD_KEY = 'markets.dashboard.live.v2';
+  const CACHE_SECTORS_KEY   = 'markets.sectors.v1';
+
+  function cacheDashboard(data) {
+    try { localStorage.setItem(CACHE_DASHBOARD_KEY, JSON.stringify(data)); } catch (_) {}
+  }
+  function readCachedDashboard() {
+    try {
+      const raw = localStorage.getItem(CACHE_DASHBOARD_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  }
+  function cacheSectors(list) {
+    try { localStorage.setItem(CACHE_SECTORS_KEY, JSON.stringify(list)); } catch (_) {}
+  }
+  function readCachedSectors() {
+    try {
+      const raw = localStorage.getItem(CACHE_SECTORS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  }
+
   function stressColor(pct) {
     if (pct === null) return '#484f58';
-    if (pct < 25)  return '#238636';
-    if (pct < 50)  return '#2ea043';
+    if (pct < 25)  return '#11270d';
+    if (pct < 50)  return '#1d3812';
     if (pct < 70)  return '#9e6a03';
     if (pct < 85)  return '#d29922';
-    return '#da3633';
+    return '#ff8a8a';
   }
 
   function fmt(val, unit) {
     if (val === null || val === undefined) return '—';
     return `${parseFloat(val).toFixed(2)}${unit || ''}`;
   }
+
+  function groupLabel(g) {
+    if (!g) return '';
+    if (g === 'both') return 'PE · CREDIT';
+    return g.toUpperCase();
+  }
+
+  const DEFAULT_WEIGHT = 0;
+  // Knob vertical axis spans [WEIGHT_MIN, WEIGHT_MAX]. 0 = neutral (no contribution).
+  // Negative weights = inverse correlation, direction-flipped at score time.
+  const WEIGHT_MIN = -1;
+  const WEIGHT_MAX = 1;
+  const weightToPct = w => ((w - WEIGHT_MIN) / (WEIGHT_MAX - WEIGHT_MIN)) * 100;
+  const pctToWeight = p => WEIGHT_MIN + (p / 100) * (WEIGHT_MAX - WEIGHT_MIN);
+
+  // The "default" weight is the regression-derived effective weight at the current α —
+  // i.e. what the user would see on the knob with no manual override. So it shifts as
+  // α moves (global or per-sector). Falls back to 0 if components or duals aren't loaded.
+  function defaultWeightFor(sectorKey, seriesId) {
+    if (!currentData || !currentData.sectors || !currentData.sectors[sectorKey]) return DEFAULT_WEIGHT;
+    const c = currentData.sectors[sectorKey].components.find(x => x.series_id === seriesId);
+    if (!c) return DEFAULT_WEIGHT;
+    if (c.weight_credit == null || c.weight_equity == null) {
+      return c.weight != null ? roundWeight(c.weight) : DEFAULT_WEIGHT;
+    }
+    const a = readAlphaForSector(sectorKey) ?? alphaGlobal;
+    return roundWeight(a * c.weight_credit + (1 - a) * c.weight_equity);
+  }
+
+  // Internal precision: 5 decimal places. Display: up to 3 decimals with "…" suffix when truncated.
+  function roundWeight(w) {
+    const r = Math.round(w * 100000) / 100000;
+    return r === 0 ? 0 : r;  // collapse -0 to 0
+  }
+
+  function fmtWeight(w) {
+    const exact5 = roundWeight(w);
+    const rounded3 = Math.round(exact5 * 1000) / 1000;
+    if (Math.abs(exact5 - rounded3) > 1e-9) {
+      return rounded3.toFixed(3) + '…';
+    }
+    const rounded2 = Math.round(exact5 * 100) / 100;
+    if (Math.abs(rounded3 - rounded2) > 1e-9) {
+      return rounded3.toFixed(3);
+    }
+    return exact5.toFixed(2);
+  }
+
+  function digitGradient(text) {
+    return [...text].map(ch => `<span class="digit">${ch}</span>`).join('');
+  }
+
+  function sectorCode(id) {
+    const parts = id.split('_').filter(p => p !== 'and');
+    return parts.slice(0, 3).map(p => p.slice(0, 3).toUpperCase()).join('.');
+  }
+
+  const SERIES_VALUE_EXPLAINER = {
+    TOTCI:           "Year-over-year percent change in total commercial & industrial loan volume across all U.S. commercial banks. Positive = banks lending more than a year ago; negative = contraction.",
+    DFF_SOFR_SPREAD: "Absolute spread, in percentage points, between the Effective Federal Funds Rate (unsecured overnight rate) and SOFR (secured overnight rate). Roughly zero in calm conditions; widens when interbank funding markets dislocate.",
+    CC_SPREAD:       "Spread, in percentage points, between the average U.S. credit-card APR and the Federal Funds Rate. The mark-up banks charge consumers above their own cost of funds.",
+    DRCCLACBS:       "Percent of credit-card loans that are 30+ days past due, across all U.S. commercial banks.",
+    DRCLACBS:        "Percent of all consumer loans (credit cards, auto, personal, etc.) that are 30+ days past due, across all U.S. commercial banks.",
+    DRCRELEXFACBS:   "Percent of commercial real-estate loans (excluding farmland) that are 30+ days past due, across all U.S. commercial banks.",
+    BAMLC0A0CM:      "Option-adjusted spread, in percentage points, between investment-grade U.S. corporate bonds and the matched Treasury curve. The extra yield investors demand to hold IG corporates instead of risk-free debt.",
+    BAMLH0A0HYM2:    "Option-adjusted spread, in percentage points, between high-yield (junk-rated) U.S. corporate bonds and the matched Treasury curve. The extra yield investors demand to hold HY corporates instead of risk-free debt.",
+  };
+
+  const SERIES_FULL_NAMES = {
+    TOTCI:           'Commercial & Industrial Loan Volume — YoY % change in C&I loans at all commercial banks (FRED: TOTCI)',
+    DFF_SOFR_SPREAD: 'Interbank Rate Dislocation — |Effective Fed Funds Rate − Secured Overnight Financing Rate|',
+    CC_SPREAD:       'Credit Card Rate Spread — Credit card APR minus the Federal Funds Effective Rate',
+    DRCCLACBS:       'Credit Card Delinquency Rate — % of credit card loans 30+ days past due, all commercial banks (FRED: DRCCLACBS)',
+    DRCLACBS:        'Consumer Loan Delinquency Rate — % of all consumer loans 30+ days past due, all commercial banks (FRED: DRCLACBS)',
+    DRCRELEXFACBS:   'Commercial Real Estate Loan Delinquency Rate — excl. farmland, all commercial banks (FRED: DRCRELEXFACBS)',
+    BAMLC0A0CM:      'Investment-Grade Corporate Spread — ICE BofA US Corporate Index option-adjusted spread',
+    BAMLH0A0HYM2:    'High-Yield Corporate Spread — ICE BofA US High Yield Index option-adjusted spread',
+  };
 
   function renderDashboard(data) {
     const grid = document.getElementById('sectors-grid');
@@ -211,12 +2348,17 @@
       : `Historical — ${data.as_of_date}`;
     asOf.textContent = label;
 
-    const sectorOrder = ['banks', 'consumer', 'cre', 'corporate'];
     grid.innerHTML = '';
 
-    sectorOrder.forEach(sectorKey => {
+    const order = sectorOrder.length
+      ? sectorOrder
+      : Object.keys(data.sectors);
+
+    order.forEach(sectorKey => {
       const sector = data.sectors[sectorKey];
       if (!sector) return;
+      if (currentGroup === 'pe'     && !(sector.group === 'pe'     || sector.group === 'both')) return;
+      if (currentGroup === 'credit' && !(sector.group === 'credit' || sector.group === 'both')) return;
 
       const score = sector.score;
       const color = stressColor(score);
@@ -224,27 +2366,44 @@
       const card = document.createElement('div');
       card.className = 'sector-card';
 
-      const componentsHtml = sector.components.map(sid => {
-        const s = data.series[sid];
+      const componentsHtml = sector.components.map(c => {
+        const sid = c.series_id;
+        const w   = c.weight;
+        const s   = data.series[sid];
         if (!s || s.value === null) {
           return `
             <div class="component-row">
-              <span class="comp-label">${s ? s.label : sid}</span>
+              <span class="comp-label" title="${(SERIES_FULL_NAMES[sid] || (s ? s.label : sid)).split(' — ')[0]}">
+                <span class="comp-label-top">
+                  <span class="staleness-dot staleness-no_data" title="no data"></span>
+                  <span>${s ? s.label : sid}</span>
+                </span>
+              </span>
               <span class="no-data-msg">no data</span>
             </div>`;
         }
         const unit = s.display_unit === 'yoy %' ? ' YoY%' : '%';
         const pctColor = stressColor(s.stress_pct);
         const stalenessClass = `staleness-${s.staleness}`;
+        const fullName = SERIES_FULL_NAMES[sid] || s.label;
+        const titleOnly = (fullName.split(' — ')[0]) || fullName;
+        const wMag = Math.max(0, Math.min(1, Math.abs(w || 0)));
+        const wSide = (w || 0) >= 0 ? 'left:50%' : `right:50%`;
+        const wBarHtml = `
+          <span class="w-bar" title="weight ${fmtWeight(w || 0)}">
+            <span class="w-bar-fill" style="${wSide};width:${wMag * 50}%"></span>
+          </span>`;
         return `
           <div class="component-row">
-            <span class="comp-label">
-              ${s.label}
-              <span class="staleness-dot ${stalenessClass}" title="${s.staleness}"></span>
+            <span class="comp-label" title="${titleOnly}">
+              <span class="comp-label-top">
+                <span class="staleness-dot ${stalenessClass}" title="${s.staleness}"></span>
+                <span>${s.label}</span>
+              </span>
+              ${wBarHtml}
             </span>
-            <span>
+            <span class="comp-right">
               <span class="comp-val">${fmt(s.value, unit)}</span>
-              &nbsp;
               <span class="comp-pct" style="background:${pctColor}22;color:${pctColor}">
                 ${s.stress_pct !== null ? s.stress_pct.toFixed(0) : '—'}
               </span>
@@ -252,19 +2411,36 @@
           </div>`;
       }).join('');
 
+      const groupTag = groupLabel(sector.group);
+      card.addEventListener('click', () => { window.location.hash = `sector/${sectorKey}`; });
       card.innerHTML = `
-        <div class="sector-label">${sector.label}</div>
-        <div class="sector-score" style="color:${color}">
-          ${score !== null ? score.toFixed(0) : '—'}
-          <span style="font-size:14px;color:#6e7681;font-weight:400">/100</span>
+        <div class="sector-head">
+          <div class="sector-label">${sector.label}</div>
         </div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${score || 0}%;background:${color}"></div>
+        <div class="score-row">
+          <div class="sector-score" style="--score-color:${color}">
+            ${digitGradient(score !== null ? score.toFixed(0) : '—')}
+          </div>
+          <div class="score-right">
+            <div class="score-meta">/100 · ${groupTag}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${score || 0}%;background-color:${color}"></div>
+            </div>
+          </div>
         </div>
         <div class="components">${componentsHtml}</div>`;
 
       grid.appendChild(card);
     });
+
+    const ghost = document.createElement('div');
+    ghost.className = 'sector-card coming-soon';
+    ghost.innerHTML = `
+      <div>
+        <div class="cs-eyebrow">Coming Soon</div>
+        <div class="cs-title">Create Your Own</div>
+      </div>`;
+    grid.appendChild(ghost);
   }
 
   function showError(msg) {
@@ -273,25 +2449,2597 @@
     err.style.display = 'block';
   }
 
-  async function loadLive() {
-    document.getElementById('btn-live').classList.add('active');
+  async function loadSectorOrder() {
     try {
-      const res = await fetch(`${API}/dashboard/current`);
-      renderDashboard(await res.json());
-    } catch(e) { showError(`Failed to load: ${e.message}`); }
+      const res = await fetch(`${API}/sectors`);
+      if (!res.ok) return;
+      const list = await res.json();
+      sectorOrder = list.map(s => s.sector_id);
+      cacheSectors(list);
+    } catch(e) { /* fall back to data.sectors key order */ }
+  }
+
+  function setGroup(g) {
+    currentGroup = g;
+    for (const id of ['grp-all','grp-pe','grp-credit']) {
+      document.getElementById(id).classList.remove('active');
+    }
+    const btn = g === null ? 'grp-all' : (g === 'pe' ? 'grp-pe' : 'grp-credit');
+    document.getElementById(btn).classList.add('active');
+    if (currentData) renderDashboard(currentData);
+  }
+
+  function setMode(modeId) {
+    for (const id of ['btn-live', 'btn-historical']) {
+      document.getElementById(id).classList.toggle('active', id === modeId);
+    }
+  }
+
+  function setLoading(on) {
+    document.body.classList.toggle('is-loading', !!on);
+  }
+
+  function buildAlphaQuery() {
+    const params = new URLSearchParams();
+    params.set('alpha', String(alphaGlobal));
+    const overrides = buildAlphaOverrides();
+    if (Object.keys(overrides).length) {
+      params.set('alpha_overrides', JSON.stringify(overrides));
+    }
+    return params.toString();
+  }
+
+  async function loadLive() {
+    const token = ++latestLoadToken;
+    setMode('btn-live');
+    if (liveCache) {
+      currentData = liveCache;
+      renderDashboard(currentData);
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/dashboard/current?${buildAlphaQuery()}`);
+      const fresh = await res.json();
+      if (token !== latestLoadToken) return;  // user moved on; ignore stale response
+      liveCache = fresh;
+      currentData = fresh;
+      cacheDashboard(fresh);
+      renderDashboard(currentData);
+      if (currentSectorKey && document.body.classList.contains('detail-mode')) {
+        renderSectorDetail(currentSectorKey);
+      }
+    } catch(e) {
+      if (!liveCache && token === latestLoadToken) showError(`Failed to load: ${e.message}`);
+    } finally {
+      if (token === latestLoadToken) setLoading(false);
+    }
   }
 
   async function loadHistorical() {
-    document.getElementById('btn-live').classList.remove('active');
-    const d = document.getElementById('date-picker').value;
+    const dp = document.getElementById('date-picker');
+    let iso = parseDateInput(dp.value);
+    // If the user clicked Historical with the input cleared/invalid (e.g. they were
+    // mid-edit), fall back to the last valid date so the mode actually switches.
+    if (!iso && lastValidDateValue) {
+      iso = parseDateInput(lastValidDateValue);
+      if (iso) dp.value = lastValidDateValue;
+    }
+    if (!iso) return;
+    const token = ++latestLoadToken;
+    setMode('btn-historical');
+    setLoading(true);
     try {
-      const res = await fetch(`${API}/dashboard/asof/${d}`);
+      const res = await fetch(`${API}/dashboard/asof/${iso}?${buildAlphaQuery()}`);
+      if (token !== latestLoadToken) return;
       if (!res.ok) { showError((await res.json()).detail); return; }
-      renderDashboard(await res.json());
-    } catch(e) { showError(`Failed to load: ${e.message}`); }
+      currentData = await res.json();
+      renderDashboard(currentData);
+      if (currentSectorKey && document.body.classList.contains('detail-mode')) {
+        renderSectorDetail(currentSectorKey);
+      }
+    } catch(e) {
+      if (token === latestLoadToken) showError(`Failed to load: ${e.message}`);
+    } finally {
+      if (token === latestLoadToken) setLoading(false);
+    }
   }
 
-  loadLive();
+  function renderSectorDetail(sectorKey) {
+    if (!currentData) return;
+    const sector = currentData.sectors[sectorKey];
+    const detail = document.getElementById('sector-detail');
+    if (!sector) { detail.innerHTML = '<p>Sector not found.</p>'; return; }
+
+    const score = sector.score;
+    const color = stressColor(score);
+    const groupTag = groupLabel(sector.group);
+
+    // Pending in-memory edits override the saved weight on re-render so changing the date
+    // doesn't visually clobber an in-progress slider adjustment. When editing a saved
+    // version, that version's weights become the base instead of indicator_sector_map.
+    const effectiveWeight = (c) => {
+      if (pendingWeights[c.series_id] != null) return pendingWeights[c.series_id];
+      if (editingVersionWeights && editingVersionWeights[c.series_id] != null) return editingVersionWeights[c.series_id];
+      return c.weight;
+    };
+
+    const indicatorsHtml = sector.components.map((c, i) => {
+      const sid = c.series_id;
+      const num = i + 1;
+      const s   = currentData.series[sid];
+      const pct = s ? s.stress_pct : null;
+      const pctColor = stressColor(pct);
+      const stalenessClass = `staleness-${s ? s.staleness : 'no_data'}`;
+      const fullName = SERIES_FULL_NAMES[sid] || (s ? s.label : sid);
+      const dashIdx = fullName.indexOf(' — ');
+      const titlePart = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
+      const subtitlePart = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
+      const valStr = (!s || s.value === null) ? '—' : fmt(s.value, s.display_unit === 'yoy %' ? ' YoY%' : '%');
+      const weightNum = effectiveWeight(c) != null ? effectiveWeight(c) : 1;
+      const def = defaultWeightFor(sectorKey, sid);
+      const modCls = Math.abs(weightNum - def) > 1e-3 ? ' modified' : '';
+      return `
+        <div class="detail-ind" data-series="${sid}" onclick="indicatorClick('${sid}')">
+          <div class="detail-ind-label">
+            <span class="ind-num">${num}</span>
+            <span class="staleness-dot ${stalenessClass}"></span>
+            <span>${titlePart}</span>
+            <span class="ind-weight${modCls}">${fmtWeight(weightNum)}γ</span>
+          </div>
+          <div class="detail-ind-full">${subtitlePart}</div>
+          <div class="detail-ind-row">
+            <span class="detail-ind-val">${valStr}</span>
+            <span class="detail-ind-pct" style="color:${pctColor}">${pct !== null ? pct.toFixed(0) : '—'}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    detail.innerHTML = `
+      <div class="detail-top">
+        <div class="detail-top-left">
+          <div class="detail-header">
+            <div class="detail-title">${sector.label} <span class="detail-group">${groupTag}</span></div>
+          </div>
+          <div class="detail-score-row">
+            <div class="detail-score" style="--score-color:${color}">${digitGradient(score !== null ? score.toFixed(0) : '—')}</div>
+            <div class="detail-score-meta">/100</div>
+            <div class="detail-bar"><div class="detail-bar-fill" style="width:${score || 0}%;background-color:${color}"></div></div>
+          </div>
+        </div>
+        <div class="detail-graph-wrap">
+        <div class="detail-graph-title">Indicator Weights (<span class="g">γ</span>)</div>
+        ${ALPHA_SECTOR_CAPABLE.has(sectorKey) ? `
+        <div class="sector-alpha-row" id="sector-alpha-row">
+          <span class="alpha-label">Equity</span>
+          <input type="range" id="sector-alpha-slider" min="0" max="1" step="0.01" value="${(readAlphaForSector(sectorKey) ?? alphaGlobal).toFixed(2)}">
+          <span class="alpha-label">Credit</span>
+          <span class="alpha-value" id="sector-alpha-value">α = ${(readAlphaForSector(sectorKey) ?? alphaGlobal).toFixed(2)}</span>
+        </div>` : ''}
+        <div class="detail-placeholder">
+          <div class="history-dropdown">
+            <button class="history-trigger" title="Weight history" onclick="toggleHistoryPanel(event)">◀</button>
+            <div class="history-panel" id="history-panel"></div>
+          </div>
+          <div class="axis-y"></div>
+          <div class="axis-x"></div>
+          <div class="arrow-y"></div>
+          <div class="arrow-x"></div>
+          <div class="data-lines">${
+            sector.components.map((c, i) => {
+              const pct = ((i + 1) / (sector.components.length + 1)) * 100;
+              const ew = effectiveWeight(c);
+              const wNum = (ew != null ? ew : 1);
+              const knobPct = Math.max(0, Math.min(100, weightToPct(wNum)));
+              const def = defaultWeightFor(sectorKey, c.series_id);
+              const defaultPct = weightToPct(def);
+              const isMod = Math.abs(wNum - def) > 1e-3;
+              const fullName = SERIES_FULL_NAMES[c.series_id] || c.series_id;
+              const titleOnly = fullName.split(' — ')[0];
+              return `
+                <div class="data-line" title="${titleOnly}" style="left:${pct}%"></div>
+                <div class="data-cap" style="left:${pct}%"></div>
+                <div class="default-mark" title="regression default ${fmtWeight(def)}" style="left:${pct}%;bottom:${defaultPct}%"></div>
+                <div class="weight-label${isMod ? ' modified' : ''}" data-series="${c.series_id}" title="${titleOnly}" ondblclick="startEditWeight(this)" style="left:${pct}%">${fmtWeight(wNum)}</div>
+                <div class="knob" title="${titleOnly}" data-series="${c.series_id}" style="left:${pct}%;bottom:${knobPct}%"></div>`;
+            }).join('')
+          }</div>
+          <div class="ticks-x">${
+            sector.components.map((_, i) => {
+              const pct = ((i + 1) / (sector.components.length + 1)) * 100;
+              return `<div class="tick" style="left:${pct}%"></div>`;
+            }).join('')
+          }</div>
+          <div class="labels-x">${
+            sector.components.map((c, i) => {
+              const pct = ((i + 1) / (sector.components.length + 1)) * 100;
+              const fullName = SERIES_FULL_NAMES[c.series_id] || c.series_id;
+              const titleOnly = fullName.split(' — ')[0];
+              return `<div class="label-x" title="${titleOnly}" style="left:${pct}%">${i + 1}</div>`;
+            }).join('')
+          }</div>
+          <div class="ticks-y">${
+            // Gridlines every 0.1 across [-1, 1]. Heavier line at 0 via .zero class.
+            Array.from({length: 21}, (_, i) => -1 + i * 0.1).map(v => {
+              const isZero = Math.abs(v) < 1e-9;
+              return `<div class="tick-y${isZero ? ' zero' : ''}" style="bottom:${weightToPct(v)}%"></div>`;
+            }).join('')
+          }</div>
+          <div class="labels-y">${
+            [-1, -0.5, 0, 0.5, 1].map(v =>
+              `<div class="label-y" style="bottom:${weightToPct(v)}%">${v.toFixed(1)}</div>`
+            ).join('')
+          }</div>
+        </div>
+        </div>
+      </div>
+      <div class="detail-save-row-wrap">
+        <div class="detail-save-row-spacer"></div>
+        <div class="detail-save-row">
+          <span class="save-status" id="save-status">All changes saved</span>
+          <button class="detail-reset-btn" onclick="resetCurrentSector()">Reset to Default</button>
+          <button class="detail-discard-btn" id="detail-discard" onclick="discardCurrentSector()">Discard Changes</button>
+          <button class="detail-save-btn" id="detail-save" onclick="saveCurrentSector()">Save Weights</button>
+        </div>
+      </div>
+      <div class="detail-section-label">Indicators</div>
+      <div class="detail-indicators">${indicatorsHtml}</div>`;
+
+    initKnobs();
+    updateSaveButton();
+
+    // Per-sector alpha slider (only mounted for the 4 capable sectors).
+    const sliderEl = document.getElementById('sector-alpha-slider');
+    const valueEl = document.getElementById('sector-alpha-value');
+    if (sliderEl && valueEl) {
+      let pending = null;
+      sliderEl.addEventListener('input', () => {
+        const v = parseFloat(sliderEl.value);
+        valueEl.textContent = `α = ${v.toFixed(2)}`;
+        writeAlphaForSector(sectorKey, v);
+        if (pending) clearTimeout(pending);
+        pending = setTimeout(() => {
+          pending = null;
+          // Refetch using current mode so the score blend updates for this sector.
+          const liveActive = document.getElementById('btn-live')?.classList.contains('active');
+          if (liveActive !== false) {
+            liveCache = null;
+            loadLive();
+          } else {
+            loadHistorical();
+          }
+        }, 200);
+      });
+    }
+  }
+
+  function isAllDefault() {
+    if (!currentSectorKey || !currentData) return true;
+    const sector = currentData.sectors[currentSectorKey];
+    if (!sector) return true;
+    return sector.components.every(c => {
+      const eff = pendingWeights[c.series_id] != null ? pendingWeights[c.series_id] : c.weight;
+      const def = defaultWeightFor(currentSectorKey, c.series_id);
+      return Math.abs((eff != null ? eff : 1) - def) < 1e-3;
+    });
+  }
+
+  function updateSaveButton() {
+    const dirty = isDirty();
+    const btn = document.getElementById('detail-save');
+    if (btn) btn.classList.toggle('visible', dirty);
+    const dbtn = document.getElementById('detail-discard');
+    if (dbtn) dbtn.classList.toggle('visible', dirty);
+    const status = document.getElementById('save-status');
+    if (status) {
+      if (!hasInteracted && !dirty) {
+        status.textContent = '';
+        status.classList.remove('dirty');
+      } else {
+        status.textContent = dirty ? 'Unsaved changes' : 'All changes saved';
+        status.classList.toggle('dirty', dirty);
+      }
+    }
+    const resetBtn = document.querySelector('#sector-detail .detail-reset-btn');
+    if (resetBtn) resetBtn.style.display = isAllDefault() ? 'none' : 'inline-block';
+  }
+
+  let lastAcceptedDate = '2008-09-01';
+
+  async function gateNav(action, onCancel, context = 'back') {
+    if (!(currentSectorKey && isDirty())) { action(); return; }
+    const sectorKey = currentSectorKey;
+    const payload = {...pendingWeights};
+    const choice = await showConfirm(context);
+    if (choice === 'stay') { if (onCancel) onCancel(); return; }
+    pendingWeights = {};
+    updateSaveButton();
+    if (choice === 'save') await saveWeights(sectorKey, payload);
+    action();
+  }
+
+  function dateChangedAttempt() {
+    const dp = document.getElementById('date-picker');
+    const newDate = dp.value;
+    gateNav(
+      () => { lastAcceptedDate = newDate; loadHistorical(); },
+      () => { dp.value = lastAcceptedDate; },
+      'date'
+    );
+  }
+
+  function historicalAttempt() {
+    const dp = document.getElementById('date-picker');
+    gateNav(() => { lastAcceptedDate = dp.value; loadHistorical(); }, null, 'date');
+  }
+
+  function effectiveWeightsMap() {
+    if (!currentSectorKey || !currentData) return {};
+    const sector = currentData.sectors[currentSectorKey];
+    if (!sector) return {};
+    const eff = {};
+    sector.components.forEach(c => {
+      const w = pendingWeights[c.series_id] != null ? pendingWeights[c.series_id] : c.weight;
+      if (w != null) eff[c.series_id] = w;
+    });
+    return eff;
+  }
+
+  function weightsMatch(a, b, epsilon = 1e-6) {
+    const ak = Object.keys(a), bk = Object.keys(b);
+    if (ak.length === 0 || bk.length === 0) return false;
+    const keys = new Set([...ak, ...bk]);
+    for (const k of keys) {
+      if (a[k] == null || b[k] == null) return false;
+      if (Math.abs(Number(a[k]) - Number(b[k])) > epsilon) return false;
+    }
+    return true;
+  }
+
+  async function toggleHistoryPanel(e) {
+    e.stopPropagation();
+    const panel = document.getElementById('history-panel');
+    if (!panel) return;
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+      return;
+    }
+    panel.innerHTML = `<div class="history-row empty">Loading…</div>`;
+    panel.classList.add('open');
+    try {
+      const res = await fetch(`${API}/sectors/${currentSectorKey}/weight-versions?limit=10`);
+      const list = res.ok ? await res.json() : [];
+      const editing = editingVersionId != null;
+      const currentSelected = !editing && selectedVersionId == null;
+      const currentRow = `<div class="history-row${currentSelected ? ' selected' : ''}" data-current="1">
+        <span><span class="check">${editing ? '' : '✓'}</span>Current (unsaved)</span>
+        <span class="ts">—</span>
+      </div>`;
+      const versionRows = list.map(v => {
+        const d = new Date(v.saved_at);
+        const ts = d.toLocaleString(undefined, {
+          month: 'short', day: '2-digit',
+          hour: '2-digit', minute: '2-digit',
+        });
+        const rawTag = v.name && v.name.trim() ? v.name : `v-${v.version_id}`;
+        const tag = rawTag.length > 15 ? rawTag.slice(0, 15) + '…' : rawTag;
+        const isEditing = v.version_id === editingVersionId;
+        const sel = isEditing || (!editing && v.version_id === selectedVersionId);
+        return `<div class="history-row${sel ? ' selected' : ''}" data-version="${v.version_id}">
+          <span><span class="check">${isEditing ? '✓' : ''}</span><span class="v-name" data-version="${v.version_id}" title="${rawTag} (double-click to rename)">${tag}</span></span>
+          <span class="row-right">
+            <button class="row-edit" data-version="${v.version_id}" title="Edit this version">Edit</button>
+            <span class="ts">${ts}</span>
+            <button class="row-del" data-version="${v.version_id}" title="Delete this version">×</button>
+          </span>
+        </div>`;
+      }).join('');
+      panel.innerHTML = currentRow + versionRows;
+      panel.querySelectorAll('.history-row[data-version]').forEach(row => {
+        const vid = row.dataset.version;
+        row.addEventListener('click', async () => {
+          const v = list.find(x => String(x.version_id) === vid);
+          if (!v) return;
+          // Special case: if the user is in edit mode purely because a save just dropped
+          // them there (and they haven't started editing again), a row click should exit
+          // edit mode rather than keep saving back to the post-save version.
+          if (editingVersionId != null && editEntryMode === 'save' && editingVersionId !== v.version_id) {
+            const exitingId = editingVersionId;
+            editingVersionId = null;
+            editingVersionWeights = null;
+            editEntryMode = null;
+            // Move the ✓ off the version we just exited and back onto Current.
+            const exitingRow = panel.querySelector(`.history-row[data-version="${exitingId}"] .check`);
+            if (exitingRow) exitingRow.textContent = '';
+            const currentCheck = panel.querySelector('.history-row[data-current] .check');
+            if (currentCheck) currentCheck.textContent = '✓';
+          }
+          // If we're still editing a different version, warn before loading these weights.
+          if (editingVersionId != null && editingVersionId !== v.version_id) {
+            const editV = list.find(x => x.version_id === editingVersionId);
+            const editName = editV && editV.name && editV.name.trim() ? editV.name : `v-${editingVersionId}`;
+            const ok = await showSimpleConfirm(
+              `Working on ${editName}`,
+              `These weights will load onto the canvas, but any changes you save will be written to "${editName}" — the version you started with.`,
+              'Continue',
+              'Cancel',
+              'primary'
+            );
+            if (!ok) return;
+          }
+          selectedVersionId = v.version_id;
+          applyWeightVersion(v.weights);
+          panel.querySelectorAll('.history-row').forEach(r => r.classList.remove('selected'));
+          row.classList.add('selected');
+        });
+      });
+      panel.querySelectorAll('.v-name').forEach(nameEl => {
+        nameEl.addEventListener('dblclick', async (e) => {
+          e.stopPropagation();
+          const vid = parseInt(nameEl.dataset.version, 10);
+          const v = list.find(x => x.version_id === vid);
+          const initial = v && v.name ? v.name : '';
+          const newName = await showNameModal({
+            title: 'Rename version',
+            body: 'Give this weight set a new label.',
+            initial,
+            confirmLabel: 'Rename',
+          });
+          if (newName === null) return;
+          const ok = await renameVersion(currentSectorKey, vid, newName);
+          if (!ok) { showError('Failed to rename version'); return; }
+          if (v) v.name = newName.trim() || null;
+          const finalName = newName.trim() || `v-${vid}`;
+          nameEl.textContent = finalName.length > 15 ? finalName.slice(0, 15) + '…' : finalName;
+          nameEl.title = finalName + ' (double-click to rename)';
+        });
+      });
+      panel.querySelectorAll('.row-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const vid = parseInt(btn.dataset.version, 10);
+          const v = list.find(x => x.version_id === vid);
+          if (v) enterEditModeFor(v);
+          panel.classList.remove('open');
+        });
+      });
+      panel.querySelectorAll('.row-del').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const vid = parseInt(btn.dataset.version, 10);
+          const v = list.find(x => x.version_id === vid);
+          const tag = v && v.name && v.name.trim() ? v.name : `v-${vid}`;
+          const ok = await showSimpleConfirm(
+            'Delete this version?',
+            `"${tag}" will be permanently removed from the history.`,
+            'Delete',
+            'Cancel',
+            'danger'
+          );
+          if (!ok) return;
+          const success = await deleteVersion(currentSectorKey, vid);
+          if (!success) { showError('Failed to delete version'); return; }
+          const row = btn.closest('.history-row');
+          if (row) row.remove();
+          // Update local list reference so subsequent clicks/applies don't see stale data.
+          const idx = list.findIndex(x => x.version_id === vid);
+          if (idx !== -1) list.splice(idx, 1);
+        });
+      });
+      const currentRowEl = panel.querySelector('.history-row[data-current]');
+      if (currentRowEl) {
+        currentRowEl.style.cursor = 'pointer';
+        currentRowEl.addEventListener('click', () => {
+          returnToCurrent();
+          panel.querySelectorAll('.history-row').forEach(r => r.classList.remove('selected'));
+          currentRowEl.classList.add('selected');
+        });
+      }
+    } catch (err) {
+      panel.innerHTML = `<div class="history-row empty">Failed to load</div>`;
+    }
+  }
+
+  function applyWeightVersion(weightsObj) {
+    if (!currentData || !currentSectorKey) return;
+    const sector = currentData.sectors[currentSectorKey];
+    if (!sector) return;
+    const ph0 = document.querySelector('#sector-detail .detail-placeholder');
+    const inEditMode = editingVersionId != null;
+    // If we're already editing a version, clicking another row just loads its
+    // weights as pending — the save target stays the originally-edited version.
+    if (!inEditMode && stashedWeights === null) stashedWeights = {...pendingWeights};
+    // Update the canvas in-place rather than re-rendering, so any open dropdown stays open.
+    sector.components.forEach(c => {
+      if (weightsObj[c.series_id] == null) return;
+      const w = roundWeight(weightsObj[c.series_id]);
+      pendingWeights[c.series_id] = w;
+      const def = defaultWeightFor(currentSectorKey, c.series_id);
+      const isMod = Math.abs(w - def) > 1e-3;
+      const knob = document.querySelector(`#sector-detail .knob[data-series="${c.series_id}"]`);
+      if (knob) knob.style.bottom = (w * 100) + '%';
+      const lbl = document.querySelector(`#sector-detail .weight-label[data-series="${c.series_id}"]`);
+      if (lbl && lbl.contentEditable !== 'true') {
+        lbl.textContent = fmtWeight(w);
+        lbl.classList.toggle('modified', isMod);
+      }
+      const ind = document.querySelector(`.detail-ind[data-series="${c.series_id}"] .ind-weight`);
+      if (ind) {
+        ind.textContent = fmtWeight(w) + 'γ';
+        ind.classList.toggle('modified', isMod);
+      }
+    });
+    updateSaveButton();
+    if (ph0) {
+      // Edit mode keeps the light bg; viewing mode uses the dark bg.
+      ph0.classList.toggle('viewing-version', inEditMode);
+    }
+  }
+
+  function returnToCurrent() {
+    const ph = document.querySelector('#sector-detail .detail-placeholder');
+    selectedVersionId = null;
+    editingVersionId = null;
+    editingVersionWeights = null;
+    editEntryMode = null;
+    if (stashedWeights !== null) {
+      pendingWeights = {...stashedWeights};
+      stashedWeights = null;
+    } else {
+      pendingWeights = {};
+    }
+    // Returning to Current is a fresh context — the previous "All changes saved"
+    // status was for the version we just left, not for Current.
+    if (Object.keys(pendingWeights).length === 0) hasInteracted = false;
+    if (ph) ph.classList.remove('viewing-version');
+    renderSectorDetail(currentSectorKey);
+  }
+
+  function enterEditModeFor(v, entry = 'manual') {
+    editingVersionId = v.version_id;
+    editingVersionWeights = {...v.weights};
+    editEntryMode = entry;
+    selectedVersionId = v.version_id;
+    pendingWeights = {};
+    stashedWeights = null;
+    renderSectorDetail(currentSectorKey);
+    // Manual entry (clicking Edit) immediately lights the bg. Auto-entry after a save
+    // stays dark until the user makes their first edit on the new version.
+    if (entry !== 'save') {
+      const ph = document.querySelector('#sector-detail .detail-placeholder');
+      if (ph) ph.classList.add('viewing-version');
+    }
+  }
+
+  // Close history panel on outside click.
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('history-panel');
+    if (!panel || !panel.classList.contains('open')) return;
+    if (e.target.closest('.history-dropdown')) return;
+    panel.classList.remove('open');
+  });
+
+  function discardCurrentSector() {
+    if (!isDirty()) return;
+    pendingWeights = {};
+    // In edit mode we stay editing the version (revert to its base state).
+    renderSectorDetail(currentSectorKey);
+  }
+
+  const HISTORY_LIMIT = 10;
+
+  async function fetchVersions(sectorKey, limit = HISTORY_LIMIT) {
+    try {
+      const res = await fetch(`${API}/sectors/${sectorKey}/weight-versions?limit=${limit}`);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (_) { return []; }
+  }
+
+  async function saveVersionWeights(sectorKey, versionId, weights) {
+    try {
+      const res = await fetch(`${API}/sectors/${sectorKey}/weight-versions/${versionId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ weights }),
+      });
+      if (!res.ok) { showError(`Failed to save: ${res.status}`); return false; }
+      return true;
+    } catch (e) { showError(`Failed to save: ${e.message}`); return false; }
+  }
+
+  async function renameVersion(sectorKey, versionId, currentName) {
+    try {
+      const res = await fetch(`${API}/sectors/${sectorKey}/weight-versions/${versionId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: currentName }),
+      });
+      return res.ok;
+    } catch (_) { return false; }
+  }
+
+  async function deleteVersion(sectorKey, versionId) {
+    try {
+      const res = await fetch(`${API}/sectors/${sectorKey}/weight-versions/${versionId}`, { method: 'DELETE' });
+      return res.ok;
+    } catch (_) { return false; }
+  }
+
+  function showEvictModal(versions) {
+    return new Promise(resolve => {
+      const modal = document.getElementById('evict-modal');
+      const list  = document.getElementById('evict-list');
+      const cancel = document.getElementById('evict-cancel');
+      list.innerHTML = versions.map(v => {
+        const d = new Date(v.saved_at);
+        const ts = d.toLocaleString(undefined, {
+          year: 'numeric', month: 'short', day: '2-digit',
+          hour: '2-digit', minute: '2-digit',
+        });
+        const tag = v.name && v.name.trim() ? v.name : `v-${v.version_id}`;
+        return `<div class="v-row">
+          <span class="v-tag">${tag}</span>
+          <span class="ts">${ts}</span>
+          <button class="v-del" data-version="${v.version_id}">Delete</button>
+        </div>`;
+      }).join('');
+      modal.classList.add('open');
+      const cleanup = (ans) => {
+        modal.classList.remove('open');
+        cancel.removeEventListener('click', onCancel);
+        list.querySelectorAll('.v-del').forEach(b => b.removeEventListener('click', onDel));
+        resolve(ans);
+      };
+      const onCancel = () => cleanup(null);
+      const onDel = (e) => cleanup(parseInt(e.currentTarget.dataset.version, 10));
+      cancel.addEventListener('click', onCancel);
+      list.querySelectorAll('.v-del').forEach(b => b.addEventListener('click', onDel));
+    });
+  }
+
+  function showSimpleConfirm(title, body, yesLabel = 'Confirm', noLabel = 'Cancel', yesClass = 'primary') {
+    return new Promise(resolve => {
+      const modal = document.getElementById('simple-confirm-modal');
+      const titleEl = document.getElementById('sc-title');
+      const bodyEl = document.getElementById('sc-body');
+      const yes = document.getElementById('sc-yes');
+      const no  = document.getElementById('sc-no');
+      titleEl.textContent = title;
+      bodyEl.textContent = body;
+      yes.textContent = yesLabel;
+      no.textContent = noLabel;
+      yes.className = yesClass;
+      modal.classList.add('open');
+      const cleanup = (ans) => {
+        modal.classList.remove('open');
+        yes.removeEventListener('click', onYes);
+        no.removeEventListener('click', onNo);
+        resolve(ans);
+      };
+      const onYes = () => cleanup(true);
+      const onNo  = () => cleanup(false);
+      yes.addEventListener('click', onYes);
+      no.addEventListener('click', onNo);
+    });
+  }
+
+  function showNameModal(opts = {}) {
+    const {
+      title = 'Name this version',
+      body = 'Give this weight set a label so you can recognize it later.',
+      initial = '',
+      confirmLabel = 'Save Weights',
+    } = opts;
+    return new Promise(resolve => {
+      const modal = document.getElementById('name-modal');
+      const titleEl = modal.querySelector('.modal-title');
+      const bodyEl = modal.querySelector('.modal-body');
+      const input = document.getElementById('name-input');
+      const yes   = document.getElementById('name-confirm');
+      const no    = document.getElementById('name-cancel');
+      titleEl.textContent = title;
+      bodyEl.textContent = body;
+      yes.textContent = confirmLabel;
+      input.value = initial;
+      modal.classList.add('open');
+      setTimeout(() => { input.focus(); input.select(); }, 0);
+      const cleanup = (ans) => {
+        modal.classList.remove('open');
+        yes.removeEventListener('click', onYes);
+        no.removeEventListener('click', onNo);
+        input.removeEventListener('keydown', onKey);
+        resolve(ans);
+      };
+      const onYes = () => cleanup(input.value.trim());
+      const onNo  = () => cleanup(null);
+      const onKey = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); onYes(); }
+        else if (e.key === 'Escape') { e.preventDefault(); onNo(); }
+      };
+      yes.addEventListener('click', onYes);
+      no.addEventListener('click', onNo);
+      input.addEventListener('keydown', onKey);
+    });
+  }
+
+  async function saveCurrentSector() {
+    if (!isDirty()) return;
+    const sectorKey = currentSectorKey;
+
+    // Edit mode: write the merged effective weights back into the version row only.
+    // No name prompt, no version-cap check, no new version created.
+    if (editingVersionId != null) {
+      const sector = currentData.sectors[sectorKey];
+      if (!sector) return;
+      const allVersions = await fetchVersions(sectorKey, HISTORY_LIMIT);
+      const editV = allVersions.find(x => x.version_id === editingVersionId);
+      const editName = editV && editV.name && editV.name.trim() ? editV.name : `v-${editingVersionId}`;
+      const ok = await showSimpleConfirm(
+        `Save to ${editName}?`,
+        `These weight changes will overwrite "${editName}". The previous values on that version will be replaced.`,
+        'Save',
+        'Cancel',
+        'primary'
+      );
+      if (!ok) return;
+      const fullWeights = {};
+      sector.components.forEach(c => {
+        const w = pendingWeights[c.series_id] != null
+          ? pendingWeights[c.series_id]
+          : (editingVersionWeights && editingVersionWeights[c.series_id] != null
+              ? editingVersionWeights[c.series_id]
+              : c.weight);
+        fullWeights[c.series_id] = w;
+      });
+      const success = await saveVersionWeights(sectorKey, editingVersionId, fullWeights);
+      if (!success) return;
+      editingVersionWeights = {...fullWeights};
+      pendingWeights = {};
+      editEntryMode = 'save';   // post-save state: a row click should exit edit mode
+      updateSaveButton();
+      return;
+    }
+
+    // Enforce max history depth: if we're already at the cap, make the user
+    // explicitly delete one before this save lands.
+    const versions = await fetchVersions(sectorKey, HISTORY_LIMIT);
+    if (versions.length >= HISTORY_LIMIT) {
+      const evictId = await showEvictModal(versions);
+      if (evictId == null) return;  // user cancelled the save
+      const ok = await deleteVersion(sectorKey, evictId);
+      if (!ok) { showError('Failed to delete version'); return; }
+    }
+
+    // Prompt for a name for this version. Cancel aborts the save entirely.
+    const name = await showNameModal();
+    if (name === null) return;
+
+    const payload = {...pendingWeights};
+    // Pre-patch currentData with the values we're about to save so the
+    // local "all default?" check sees them immediately and the Reset to
+    // Default button doesn't briefly flicker out before reappearing.
+    if (currentData && currentData.sectors[sectorKey]) {
+      currentData.sectors[sectorKey].components.forEach(c => {
+        if (payload[c.series_id] != null) c.weight = payload[c.series_id];
+      });
+    }
+    pendingWeights = {};
+    updateSaveButton();
+    await saveWeights(sectorKey, payload, { name });
+    // Stay on the version that just captured the work — drop the user into edit mode
+    // for the newly-created (newest) version. Tag this entry as 'save' so clicking
+    // another version exits edit mode (since the user hasn't actively chosen to keep
+    // editing this one).
+    const fresh = await fetchVersions(sectorKey, 1);
+    if (fresh.length > 0) {
+      enterEditModeFor(fresh[0], 'save');
+    }
+  }
+
+  function applyWeightChange(series, weight) {
+    weight = roundWeight(Math.max(0, Math.min(1, weight)));
+    pendingWeights[series] = weight;
+    hasInteracted = true;
+    if (editingVersionId != null) {
+      if (editEntryMode === 'save') {
+        const ph = document.querySelector('#sector-detail .detail-placeholder');
+        if (ph) ph.classList.add('viewing-version');
+      }
+      editEntryMode = 'manual';
+    }
+    if (editingVersionId == null) {
+      selectedVersionId = null;
+      stashedWeights = null;
+      const ph = document.querySelector('#sector-detail .detail-placeholder');
+      if (ph) ph.classList.remove('viewing-version');
+    }
+    const knob = document.querySelector(`#sector-detail .knob[data-series="${series}"]`);
+    if (knob) knob.style.bottom = (weight * 100) + '%';
+    const def = defaultWeightFor(currentSectorKey, series);
+    const isMod = Math.abs(weight - def) > 1e-3;
+    const panel = document.querySelector(`.detail-ind[data-series="${series}"] .ind-weight`);
+    if (panel) {
+      panel.textContent = fmtWeight(weight) + 'γ';
+      panel.classList.toggle('modified', isMod);
+    }
+    const lbl = document.querySelector(`#sector-detail .weight-label[data-series="${series}"]`);
+    if (lbl && lbl.contentEditable !== 'true') {
+      lbl.textContent = fmtWeight(weight);
+      lbl.classList.toggle('modified', isMod);
+    }
+    updateSaveButton();
+  }
+
+  function currentWeightFor(series) {
+    if (pendingWeights[series] != null) return pendingWeights[series];
+    if (currentData && currentSectorKey) {
+      const comp = (currentData.sectors[currentSectorKey]?.components || []).find(c => c.series_id === series);
+      if (comp && comp.weight != null) return comp.weight;
+    }
+    return 1;
+  }
+
+  function startEditWeight(labelEl) {
+    if (labelEl.getAttribute('contenteditable') === 'true') return;
+    const series = labelEl.dataset.series;
+    const orig = labelEl.textContent;
+    // Show full tracked precision (up to 5 decimals, no trailing zeros) while editing.
+    const exact = roundWeight(currentWeightFor(series));
+    labelEl.textContent = parseFloat(exact.toFixed(5)).toString();
+    labelEl.setAttribute('contenteditable', 'true');
+    labelEl.focus();
+    const range = document.createRange();
+    range.selectNodeContents(labelEl);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    let cancelled = false;
+    const cleanup = () => {
+      labelEl.removeEventListener('blur', onBlur);
+      labelEl.removeEventListener('keydown', onKey);
+      labelEl.removeEventListener('beforeinput', onBeforeInput);
+      labelEl.setAttribute('contenteditable', 'false');
+    };
+    const VALID = /^\d?(\.\d{0,5})?$/;
+    const onBeforeInput = (e) => {
+      const it = e.inputType;
+      if (it && (it.startsWith('delete') || it === 'historyUndo' || it === 'historyRedo')) return;
+      const text = labelEl.textContent;
+      let start = 0, end = text.length;
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        const r = sel.getRangeAt(0);
+        const node = r.startContainer === labelEl ? labelEl.firstChild : r.startContainer;
+        if (node && (node === labelEl.firstChild || node === labelEl)) {
+          start = r.startOffset;
+          end = r.endOffset;
+        }
+      }
+      const inserted = e.data || '';
+      const next = text.slice(0, start) + inserted + text.slice(end);
+      if (!VALID.test(next)) e.preventDefault();
+    };
+    const onBlur = () => {
+      if (cancelled) { cleanup(); return; }
+      const val = parseFloat(labelEl.textContent);
+      if (isNaN(val)) {
+        labelEl.textContent = orig;
+      } else {
+        cleanup();
+        applyWeightChange(series, val);
+        return;
+      }
+      cleanup();
+    };
+    const onKey = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); labelEl.blur(); }
+      else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelled = true;
+        labelEl.textContent = orig;
+        labelEl.blur();
+      }
+    };
+    labelEl.addEventListener('blur', onBlur);
+    labelEl.addEventListener('keydown', onKey);
+    labelEl.addEventListener('beforeinput', onBeforeInput);
+  }
+
+  async function resetCurrentSector() {
+    if (!currentSectorKey || !currentData) return;
+    const sector = currentData.sectors[currentSectorKey];
+    if (!sector) return;
+
+    // If there are unsaved pending edits, ask what to do with them first.
+    if (isDirty()) {
+      const choice = await showConfirm('reset');
+      if (choice === 'stay') return;
+      const sectorKey = currentSectorKey;
+      if (choice === 'save') {
+        const payload = {...pendingWeights};
+        sector.components.forEach(c => { if (payload[c.series_id] != null) c.weight = payload[c.series_id]; });
+        pendingWeights = {};
+        await saveWeights(sectorKey, payload);
+      } else { // 'discard'
+        pendingWeights = {};
+      }
+    }
+
+    // Apply defaults and persist them. The previous saved state is still accessible
+    // via the History dropdown, so overwriting indicator_sector_map with defaults is
+    // a recoverable action and leaves the sector in a clean (non-dirty) view state.
+    const defaults = {};
+    let anyDifferent = false;
+    sector.components.forEach(c => {
+      const def = defaultWeightFor(currentSectorKey, c.series_id);
+      defaults[c.series_id] = def;
+      if (Math.abs((c.weight ?? 1) - def) > 1e-9) anyDifferent = true;
+      c.weight = def;
+    });
+    pendingWeights = {};
+    if (anyDifferent) {
+      // snapshot=false: resetting to default isn't a meaningful "version" worth keeping
+      // in history. The history list is for protecting user-tweaked weights.
+      await saveWeights(currentSectorKey, defaults, { snapshot: false });
+    }
+    renderSectorDetail(currentSectorKey);
+  }
+
+  function initKnobs() {
+    const container = document.querySelector('#sector-detail .data-lines');
+    if (!container) return;
+    const knobs = container.querySelectorAll('.knob');
+    knobs.forEach(knob => {
+      knob.addEventListener('mousedown', e => {
+        e.preventDefault();
+        document.body.classList.add('knob-dragging');
+        const rect = container.getBoundingClientRect();
+        const series = knob.dataset.series;
+        const indPanel = document.querySelector(`#sector-detail .detail-ind[data-series="${series}"]`);
+        let glowTimer = null;
+        if (indPanel) {
+          indPanel.classList.add('glow');
+          glowTimer = setTimeout(() => indPanel.classList.remove('glow'), 3000);
+        }
+        const move = ev => {
+          const y = ev.clientY - rect.top;
+          const rawPct = ((rect.height - y) / rect.height) * 100;
+          const clampedPct = Math.max(0, Math.min(100, rawPct));
+          // Snap to whole-percent of the visible track, then map to [-1, 1].
+          const weight = roundWeight(pctToWeight(Math.round(clampedPct)));
+          knob.style.bottom = weightToPct(weight) + '%';
+          pendingWeights[series] = weight;
+          hasInteracted = true;
+          if (editingVersionId != null) {
+            // First edit on a just-saved version → upgrade to active editing and light the bg.
+            if (editEntryMode === 'save') {
+              const ph = document.querySelector('#sector-detail .detail-placeholder');
+              if (ph) ph.classList.add('viewing-version');
+            }
+            editEntryMode = 'manual';
+          }
+          // Drag in edit mode keeps the light bg / version selection. Drag in viewing or
+          // unsaved mode clears the version selection but doesn't touch the bg class
+          // (it should already be off).
+          if (editingVersionId == null) {
+            selectedVersionId = null;
+            stashedWeights = null;
+            const ph = document.querySelector('#sector-detail .detail-placeholder');
+            if (ph) ph.classList.remove('viewing-version');
+          }
+          const def = defaultWeightFor(currentSectorKey, series);
+          const isMod = Math.abs(weight - def) > 1e-3;
+          const panel = document.querySelector(`.detail-ind[data-series="${series}"] .ind-weight`);
+          if (panel) {
+            panel.textContent = fmtWeight(weight) + 'γ';
+            panel.classList.toggle('modified', isMod);
+          }
+          const lbl = document.querySelector(`#sector-detail .weight-label[data-series="${series}"]`);
+          if (lbl) {
+            lbl.textContent = fmtWeight(weight);
+            lbl.classList.toggle('modified', isMod);
+          }
+          updateSaveButton();
+        };
+        const up = () => {
+          document.body.classList.remove('knob-dragging');
+          document.removeEventListener('mousemove', move);
+          document.removeEventListener('mouseup', up);
+          if (indPanel) {
+            if (glowTimer) clearTimeout(glowTimer);
+            indPanel.classList.remove('glow');
+          }
+        };
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+      });
+    });
+  }
+
+  function indicatorClick(sid) {
+    if (!currentData || !currentSectorKey) return;
+    const sector = currentData.sectors[currentSectorKey];
+    if (!sector) return;
+    const series = currentData.series[sid];
+    if (!series) return;
+    const fullName = SERIES_FULL_NAMES[sid] || series.label || sid;
+    const dashIdx = fullName.indexOf(' — ');
+    const titlePart = dashIdx >= 0 ? fullName.slice(0, dashIdx) : fullName;
+    const subtitlePart = dashIdx >= 0 ? fullName.slice(dashIdx + 3) : '';
+    const valStr = (series.value === null || series.value === undefined) ? '—'
+      : parseFloat(series.value).toFixed(2);
+    const unit = series.display_unit === 'yoy %' ? 'YoY %' : (series.display_unit || '%');
+    const pct = series.stress_pct;
+    const pctColor = stressColor(pct);
+    const obs = series.observation_date || '—';
+    const vintage = series.vintage_date || '—';
+    const freq = (series.update_frequency || 'unknown').replace(/^./, c => c.toUpperCase());
+    const stalenessClass = `staleness-${series.staleness || 'unknown'}`;
+    const stalenessLabel = (series.staleness || 'unknown').replace('_', ' ');
+
+    // Effective weight in this sector (saved/pending/edit base).
+    const compMap = Object.fromEntries(sector.components.map(c => [c.series_id, c]));
+    const c = compMap[sid] || {};
+    let weight = pendingWeights[sid];
+    if (weight == null && editingVersionWeights && editingVersionWeights[sid] != null) weight = editingVersionWeights[sid];
+    if (weight == null && c.weight != null) weight = c.weight;
+    if (weight == null) weight = 1;
+    const def = defaultWeightFor(currentSectorKey, sid);
+    const wMod = Math.abs(weight - def) > 1e-3;
+
+    const modal = document.getElementById('indicator-modal');
+    const content = document.getElementById('indicator-modal-content');
+    const valueHelp = SERIES_VALUE_EXPLAINER[sid]
+      || `Most recent value FRED published for this series, in its native units. Updates ${freq.toLowerCase()}.`;
+    const stressHelp = `Where today's value sits in this series' full historical distribution from FRED. 0 = calmest level ever observed, 50 = median historical conditions, 100 = most stressed ever observed. Color-coded green (calm) → red (peak).`;
+
+    content.innerHTML = `
+      <div class="ind-modal-title">${titlePart}</div>
+      <div class="ind-modal-desc">${subtitlePart}</div>
+      <div class="ind-modal-value-row">
+        <div class="ind-modal-value">${valStr}</div>
+        <div class="ind-modal-value-meta">${unit}</div>
+      </div>
+      <div class="ind-modal-obs">As of ${obs}</div>
+      <div class="ind-modal-help">${valueHelp}</div>
+      <div class="ind-modal-stress">
+        <div class="stress-label">Stress Percentile</div>
+        <div class="stress-row">
+          <span class="pct-chip" style="color:${pctColor}">${pct !== null && pct !== undefined ? Math.round(pct) : '—'}</span>
+          <span class="stress-help">${stressHelp}</span>
+        </div>
+      </div>
+      <div class="ind-modal-grid">
+        <div class="label">Update Frequency</div>
+        <div class="val">${freq}</div>
+        <div class="label">Sector Weight</div>
+        <div class="val${wMod ? ' modified' : ''}">${fmtWeight(weight)}γ</div>
+        <div class="label">Data Status</div>
+        <div class="val staleness-row"><span class="staleness-dot ${stalenessClass}"></span><span>${stalenessLabel}</span></div>
+        <div class="label">Vintage Date</div>
+        <div class="val">${vintage}</div>
+        <div class="label">Series ID</div>
+        <div class="val">${sid}</div>
+      </div>
+      <div class="modal-actions">
+        <button id="ind-modal-close">Close</button>
+      </div>`;
+    modal.classList.add('open');
+    const close = () => {
+      modal.classList.remove('open');
+      modal.removeEventListener('click', onBackdrop);
+    };
+    const onBackdrop = (e) => { if (e.target === modal) close(); };
+    document.getElementById('ind-modal-close').addEventListener('click', close, { once: true });
+    modal.addEventListener('click', onBackdrop);
+  }
+
+  async function saveWeights(sectorKey, payload, opts = {}) {
+    const { snapshot = true, name = null } = opts;
+    const params = new URLSearchParams();
+    if (!snapshot) params.set('snapshot', 'false');
+    if (snapshot && name) params.set('name', name);
+    const qs = params.toString();
+    const url = `${API}/sectors/${sectorKey}/weights${qs ? '?' + qs : ''}`;
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        showError(`Failed to save weights: ${res.status}`);
+        return false;
+      }
+      if (currentData && currentData.sectors[sectorKey]) {
+        currentData.sectors[sectorKey].components.forEach(c => {
+          if (payload[c.series_id] != null) c.weight = payload[c.series_id];
+        });
+      }
+      liveCache = null;
+      selectedVersionId = null;
+      stashedWeights = null;
+      loadLive();
+      return true;
+    } catch (e) {
+      showError(`Failed to save weights: ${e.message}`);
+      return false;
+    }
+  }
+
+  function isDirty() {
+    return currentSectorKey && Object.keys(pendingWeights).length > 0;
+  }
+
+  function clearHashToGrid() {
+    if (window.location.hash.startsWith('#sector/')) {
+      // suppress the routing side-effect that would re-prompt during hashchange
+      window.removeEventListener('hashchange', handleRoute);
+      window.location.hash = '';
+      currentSectorKey = null;
+      pendingWeights = {};
+      document.body.classList.remove('detail-mode');
+      setTimeout(() => window.addEventListener('hashchange', handleRoute), 0);
+    }
+  }
+
+  const CONFIRM_COPY = {
+    back: {
+      body: "You've adjusted indicator weights for this sector. Save them before leaving?",
+      stay: 'Stay on Page',
+    },
+    date: {
+      body: "You've adjusted indicator weights for this date. Save them before switching dates?",
+      stay: 'Stay on Date',
+    },
+    reset: {
+      body: "You've adjusted indicator weights. Save them before resetting to default?",
+      stay: 'Cancel',
+    },
+  };
+
+  function showConfirm(context = 'back') {
+    return new Promise(resolve => {
+      const copy = CONFIRM_COPY[context] || CONFIRM_COPY.back;
+      const modal = document.getElementById('confirm-modal');
+      const body  = modal.querySelector('.modal-body');
+      const yes  = document.getElementById('confirm-yes');
+      const no   = document.getElementById('confirm-no');
+      const stay = document.getElementById('confirm-stay');
+      if (body) body.textContent = copy.body;
+      stay.textContent = copy.stay;
+      modal.classList.add('open');
+      const cleanup = (answer) => {
+        modal.classList.remove('open');
+        yes.removeEventListener('click', onYes);
+        no.removeEventListener('click', onNo);
+        stay.removeEventListener('click', onStay);
+        resolve(answer);
+      };
+      const onYes  = () => cleanup('save');
+      const onNo   = () => cleanup('discard');
+      const onStay = () => cleanup('stay');
+      yes.addEventListener('click', onYes);
+      no.addEventListener('click', onNo);
+      stay.addEventListener('click', onStay);
+    });
+  }
+
+  async function leaveDetail() {
+    if (window.location.hash === '#graph' || window.location.hash === '#analyze') {
+      window.location.hash = '';
+      return;
+    }
+    if (!isDirty()) {
+      clearHashToGrid();
+      return;
+    }
+    const sectorKey = currentSectorKey;
+    const payload = {...pendingWeights};
+    const choice = await showConfirm();
+    if (choice === 'stay') return;
+    pendingWeights = {};
+    updateSaveButton();
+    if (choice === 'save') {
+      await saveWeights(sectorKey, payload);
+    }
+    clearHashToGrid();
+  }
+
+  function enterGraphView() {
+    window.location.hash = 'graph';
+  }
+
+  function enterAnalyzeView() {
+    window.location.hash = 'analyze';
+  }
+
+  // ---- Regression workflow wizard --------------------------------------
+  const regWorkflowState = { step: 1, lastResults: null, lastError: null, running: false };
+
+  function renderRegressionWorkflow() {
+    const view = document.getElementById('analyze-view');
+    if (!view) return;
+    view.innerHTML = `
+      <div class="reg-flow">
+        <div class="reg-header">
+          <div>
+            <div class="data-title" style="margin:0">Run Regression</div>
+            <div class="data-subtitle" style="margin-top:4px">Walkthrough: how per-sector indicator weights are derived from equity drawdowns and credit composites.</div>
+          </div>
+          <button type="button" class="data-back-btn" id="reg-back-btn">← Back to Analyze</button>
+        </div>
+        <div class="reg-step-nav" id="reg-step-nav"></div>
+        <div class="reg-step-body" id="reg-step-body"></div>
+      </div>
+    `;
+    document.getElementById('reg-back-btn').addEventListener('click', () => renderAnalyzeView());
+    renderRegStepNav();
+    renderRegCurrentStep();
+  }
+
+  function gotoRegStep(n) {
+    regWorkflowState.step = n;
+    renderRegStepNav();
+    renderRegCurrentStep();
+  }
+
+  function renderRegStepNav() {
+    const nav = document.getElementById('reg-step-nav');
+    if (!nav) return;
+    const steps = [
+      { n: 1, label: 'Stress Proxies' },
+      { n: 2, label: 'Indicators' },
+      { n: 3, label: 'Run Regression' },
+      { n: 4, label: 'Results' },
+    ];
+    const cur = regWorkflowState.step;
+    const tabsHtml = steps.map(s =>
+      `<div class="reg-step-tab ${cur === s.n ? 'active' : ''}" data-step="${s.n}">
+         <span class="reg-step-num">${s.n}</span>${s.label}
+       </div>`
+    ).join('');
+    nav.innerHTML = `
+      <button type="button" class="reg-nav-btn" id="reg-prev-btn" ${cur === 1 ? 'disabled' : ''} title="Previous step">←</button>
+      <div class="reg-step-tabs">${tabsHtml}</div>
+      <button type="button" class="reg-nav-btn" id="reg-next-btn" ${cur === steps.length ? 'disabled' : ''} title="Next step">→</button>
+    `;
+    nav.querySelectorAll('.reg-step-tab').forEach(t => {
+      t.addEventListener('click', () => {
+        gotoRegStep(parseInt(t.dataset.step, 10));
+      });
+    });
+    const prev = document.getElementById('reg-prev-btn');
+    const next = document.getElementById('reg-next-btn');
+    if (prev) prev.addEventListener('click', () => { if (cur > 1) gotoRegStep(cur - 1); });
+    if (next) next.addEventListener('click', () => { if (cur < steps.length) gotoRegStep(cur + 1); });
+  }
+
+  function renderRegCurrentStep() {
+    const body = document.getElementById('reg-step-body');
+    if (!body) return;
+    if (regWorkflowState.step === 1) renderRegStep1(body);
+    else if (regWorkflowState.step === 2) renderRegStep2(body);
+    else if (regWorkflowState.step === 3) renderRegStep3(body);
+    else if (regWorkflowState.step === 4) renderRegStep4(body);
+  }
+
+  async function renderRegStep1(body) {
+    body.innerHTML = `
+      <div class="reg-explainer">
+        <strong>Stress proxies</strong> are the targets of the regression — the things we want our weighted indicators to predict.
+        <br><br>
+        <strong>Equity proxy</strong> (<code>DD_&lt;sector&gt;</code>): 180-day rolling drawdown of the sector's representative ETF, computed as
+        <code>DD(t) = max(0, peak_180d(t) − price(t)) / peak_180d(t)</code>. Ranges 0 (at peak) to ~0.5 (crisis-level selloff). Daily, all 13 sectors.
+        <br><br>
+        <strong>Credit proxy</strong> (<code>CC_&lt;sector&gt;</code>): z-score composite of three credit-stress signals — each captures a different point in the credit lifecycle:
+        <ul style="margin:6px 0 6px 18px; padding:0">
+          <li><strong>SLOOS tightening</strong> (<em>leading</em>): quarterly Fed survey — net % of banks tightening loan standards. Banks tighten because they expect losses, so this turns up before realized stress.</li>
+          <li><strong>Delinquency rate</strong> (<em>coincident</em>): % of loans 30+ days past due but not yet written off. Shows stress as it's unfolding.</li>
+          <li><strong>Charge-off rate</strong> (<em>lagging</em>): % of loans the bank has written off as uncollectible. Confirms losses that delinquencies and SLOOS already flagged.</li>
+        </ul>
+        Each input is z-scored over its own history (puts %-tightening, %-delinquent, %-charged-off on the same dimensionless scale), then averaged. Forward-filled from quarterly to daily so it aligns with the daily indicators in the regression. Available for 4 sectors with bank-lending sub-sector data.
+        <br><br>
+        <strong>Per-sector ingredient map</strong> (FRED series IDs):
+      </div>
+      <table class="reg-weights-table" style="margin-bottom:18px">
+        <thead><tr><th>Sector</th><th>SLOOS (tightening)</th><th>Delinquencies</th><th>Charge-offs</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Lending &amp; Markets</strong></td>
+            <td><code>DRTSCILM</code> (C&amp;I)</td>
+            <td><code>DRBLACBS</code> (business loans)</td>
+            <td><code>CORBLACBS</code> (business), <code>CORALACBS</code> (all)</td>
+          </tr>
+          <tr>
+            <td><strong>Real Estate Finance &amp; Services</strong></td>
+            <td><code>SUBLPDRCSC</code>, <code>SUBLPDRCSN</code>, <code>SUBLPDRCSM</code> (CRE: construction / non-farm / multifamily)</td>
+            <td><code>DRCRELEXFACBS</code> (CRE), <code>DRSFRMACBS</code> (single-family)</td>
+            <td><code>CORCREXFACBS</code> (CRE), <code>CORSFRMACBS</code> (single-family)</td>
+          </tr>
+          <tr>
+            <td><strong>Financial Services</strong></td>
+            <td><code>DRTSCILM</code></td>
+            <td>—</td>
+            <td><code>CORALACBS</code></td>
+          </tr>
+          <tr>
+            <td><strong>Business Services</strong></td>
+            <td><code>DRTSCILM</code></td>
+            <td>—</td>
+            <td><code>CORBLACBS</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="reg-explainer" style="margin-bottom:14px">
+        <strong>Aggregate fallback</strong> (<code>CC_AGG</code>): single economy-wide z-score composite of <code>BAA10Y</code> (corporate bond risk premium), <code>NFCICREDIT</code> (Chicago Fed credit conditions), and <code>STLFSI4</code> (St. Louis Fed financial stress). Used as the credit target for the 9 sectors without sub-sector ground truth — they will share identical credit-side weights, a known limitation of free FRED data.
+      </div>
+      <div id="reg-proxies-table">Loading…</div>
+    `;
+    try {
+      const r = await fetch(`${API}/analysis/proxies`);
+      const data = await r.json();
+      const rows = (Array.isArray(data) ? data : []).map(p =>
+        `<tr><td>${p.series_id}</td><td>${p.kind}</td><td>${p.description || '—'}</td><td class="num">${p.obs_count ?? 0}</td><td>${p.earliest || '—'}</td><td>${p.latest || '—'}</td></tr>`
+      ).join('');
+      document.getElementById('reg-proxies-table').innerHTML = `
+        <table class="reg-weights-table">
+          <thead><tr><th>Series ID</th><th>Kind</th><th>Description</th><th>Obs</th><th>First</th><th>Last</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6" style="text-align:center; color:#666">No proxies derived yet — go to Run Regression.</td></tr>'}</tbody>
+        </table>
+      `;
+    } catch (e) {
+      document.getElementById('reg-proxies-table').innerHTML = `<div class="reg-status error">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function renderRegStep2(body) {
+    const indicators = [
+      ['TOTCI', 'C&I loan growth (YoY, inverted)', 'banks'],
+      ['DFF_SOFR_SPREAD', 'Fed Funds − SOFR spread (|·|)', 'banks'],
+      ['CC_SPREAD', 'Credit card rate − Fed Funds spread', 'consumer'],
+      ['DRCCLACBS', 'Credit card delinquency rate', 'consumer'],
+      ['DRCLACBS', 'Consumer loan delinquency (all)', 'consumer'],
+      ['BAMLC0A0CM', 'IG corporate credit spread', 'corporate'],
+      ['BAMLH0A0HYM2', 'HY corporate credit spread', 'corporate'],
+    ];
+    body.innerHTML = `
+      <div class="reg-explainer">
+        <strong>Predictors</strong>: 7 FRED indicators, each transformed to a full-history percentile rank in [0, 100] (the same stress-pct values the dashboard already uses). Spreads are computed at query time from raw series pairs.
+        <br><br>
+        The set is intentionally <strong>cross-cutting</strong> — covering rates/funding, consumer credit, and corporate credit — rather than sector-specific. Sector-specific signals (CRE delinquency, bank C&amp;I tightening, etc.) flow through the <code>CC_&lt;sector&gt;</code> targets in stage 1, not the predictors. Mixing the two would create circularity: the regression would learn its own target.
+      </div>
+      <table class="reg-weights-table">
+        <thead><tr><th>Series ID</th><th>Description</th><th>Sector tag</th></tr></thead>
+        <tbody>${indicators.map(([id, d, s]) => `<tr><td>${id}</td><td>${d}</td><td>${s}</td></tr>`).join('')}</tbody>
+      </table>
+    `;
+  }
+
+  function renderRegStep3(body) {
+    body.innerHTML = `
+      <div class="reg-explainer">
+        For each of 13 sectors, run two OLS regressions:
+        <br>&nbsp;&nbsp;• <strong>Equity-side</strong>: <code>DD_S(t) ~ pct_indicator_i(t)</code> → <code>w_equity[i, S]</code>
+        <br>&nbsp;&nbsp;• <strong>Credit-side</strong>: <code>CC_S(t) ~ pct_indicator_i(t)</code> → <code>w_credit[i, S]</code>
+        <br><br>
+        Coefficients are clipped at 0 and normalized so the sum equals N (number of non-zero indicators), preserving the "weight 1.0 = average pull" semantic. This recomputes <code>DD_*</code>/<code>CC_*</code> proxies and rewrites <code>indicator_sector_map</code>.
+      </div>
+      <div class="reg-step-actions">
+        <button type="button" class="reg-run-btn" id="reg-run-btn" ${regWorkflowState.running ? 'disabled' : ''}>
+          ${regWorkflowState.running ? 'Running…' : 'Run Regression'}
+        </button>
+        <span class="reg-status" id="reg-run-status"></span>
+      </div>
+      <div class="reg-results" id="reg-run-output"></div>
+    `;
+    const btn = document.getElementById('reg-run-btn');
+    btn.addEventListener('click', async () => {
+      regWorkflowState.running = true;
+      regWorkflowState.lastError = null;
+      regWorkflowState.lastResults = null;
+      btn.disabled = true; btn.textContent = 'Running…';
+      const status = document.getElementById('reg-run-status');
+      const out = document.getElementById('reg-run-output');
+      status.textContent = 'Computing proxies and fitting regressions — typically 30-90s.';
+      status.className = 'reg-status';
+      try {
+        const r = await fetch(`${API}/analysis/run-regression`, { method: 'POST' });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+        regWorkflowState.lastResults = data;
+        status.textContent = 'Done — loading results…';
+        status.className = 'reg-status success';
+        const log = `=== Stress proxies ===\n${data.stress_proxies_log || ''}\n\n=== Regression ===\n${data.regression_log || ''}`;
+        out.innerHTML = `<pre class="reg-log">${log.replace(/</g, '&lt;')}</pre>`;
+        // Auto-advance to Results so the user immediately sees the new weights.
+        setTimeout(() => gotoRegStep(4), 600);
+      } catch (e) {
+        regWorkflowState.lastError = e.message;
+        status.textContent = `Failed: ${e.message}`;
+        status.className = 'reg-status error';
+      } finally {
+        regWorkflowState.running = false;
+        btn.disabled = false;
+        btn.textContent = 'Run Regression';
+      }
+    });
+  }
+
+  async function renderRegStep4(body) {
+    body.innerHTML = `
+      <div class="reg-explainer">
+        Per-sector dual weights as currently persisted in <code>indicator_sector_map</code>. The slider blends them: <code>effective_weight = α · w_credit + (1−α) · w_equity</code>.
+      </div>
+      <div id="reg-weights-out">Loading…</div>
+    `;
+    try {
+      const r = await fetch(`${API}/analysis/weights`);
+      const data = await r.json();
+      const sectorIds = Object.keys(data || {});
+      if (!sectorIds.length) {
+        document.getElementById('reg-weights-out').innerHTML = '<div class="reg-status">No weights yet — run the regression first.</div>';
+        return;
+      }
+      sectorIds.sort((a, b) => (data[a].sort_order || 0) - (data[b].sort_order || 0));
+      const html = sectorIds.map(sid => {
+        const sec = data[sid];
+        const weights = sec.weights || [];
+        if (!weights.length) return '';
+        const fmt = v => {
+          if (v == null) return '—';
+          const n = Number(v);
+          // Snap tiny values to 0 to avoid "-0.00" display.
+          const snapped = Math.abs(n) < 0.005 ? 0 : n;
+          return snapped.toFixed(2);
+        };
+        const trs = weights.map(row =>
+          `<tr><td>${row.series_id}</td><td class="num">${fmt(row.weight_equity)}</td><td class="num">${fmt(row.weight_credit)}</td><td class="num">${fmt(row.weight)}</td></tr>`
+        ).join('');
+        return `
+          <div style="margin-bottom:18px">
+            <div style="color:#a070c0; font-size:12px; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:6px">${sec.label || sid} <span style="color:#666; text-transform:none; letter-spacing:0; font-size:11px; margin-left:6px">${sid}</span></div>
+            <table class="reg-weights-table">
+              <thead><tr><th>Indicator</th><th class="num">w_equity</th><th class="num">w_credit</th><th class="num">w (0.5 blend)</th></tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('reg-weights-out').innerHTML = html;
+    } catch (e) {
+      document.getElementById('reg-weights-out').innerHTML = `<div class="reg-status error">Failed: ${e.message}</div>`;
+    }
+  }
+
+  let analyzeInventoryCache = null;
+  const analyzeState = { seriesIds: [], startISO: null, endISO: null, vintageISO: null, legendVisible: true };
+  const ANALYZE_COLORS = ['#9171ad', '#6db4d6', '#d6a86d', '#6dcc8e', '#d66d8e', '#c97a6d', '#a0a0d6', '#b8b8b8'];
+
+  async function renderAnalyzeView() {
+    const view = document.getElementById('analyze-view');
+    if (!view) return;
+    view.innerHTML = `
+      <div style="display:flex; align-items:flex-start; gap:14px; margin-bottom:6px">
+        <div style="flex:1">
+          <div class="data-title" style="margin-bottom:6px">Analyze Data</div>
+          <div class="data-subtitle">Plot a FRED series from 1990-01-01 through a chosen vintage cutoff. Only data published on or before the vintage date is shown — the information set as it actually existed then.</div>
+        </div>
+        <button class="data-back-btn" id="anly-run-regression-btn" title="Open the regression workflow">Run Regression →</button>
+      </div>
+      <div class="analyze-controls">
+        <label>Series
+          <div class="anly-series-picker" id="anly-series-picker">
+            <button type="button" class="anly-series-trigger" id="anly-series-trigger">Loading…</button>
+            <div class="anly-series-panel" id="anly-series-panel"></div>
+          </div>
+        </label>
+        <label>Start date
+          <span class="anly-date-group">
+            <input id="anly-start" class="anly-date" type="text" maxlength="10" placeholder="  /  /    " inputmode="numeric" autocomplete="off">
+            <button type="button" class="anly-date-jump" id="anly-start-min" title="Jump to earliest available date (01/01/1990)">Min</button>
+          </span>
+        </label>
+        <label>End date
+          <span class="anly-date-group">
+            <input id="anly-end" class="anly-date" type="text" maxlength="10" placeholder="  /  /    " inputmode="numeric" autocomplete="off">
+            <button type="button" class="anly-date-jump" id="anly-end-vint" title="Match the vintage cutoff">=Vint.</button>
+          </span>
+        </label>
+        <label>Vintage cutoff
+          <span class="anly-date-group">
+            <input id="anly-vintage" class="anly-date" type="text" maxlength="10" placeholder="  /  /    " inputmode="numeric" autocomplete="off">
+            <button type="button" class="anly-date-jump" id="anly-vint-today" title="Jump to today">Now</button>
+          </span>
+        </label>
+        <button id="anly-plot" class="data-back-btn anly-plot-btn">Plot</button>
+        <button id="anly-save" class="data-back-btn anly-plot-btn" type="button" title="Save the current plot configuration">Save</button>
+        <div class="anly-saved-picker" id="anly-saved-picker">
+          <button type="button" class="data-back-btn anly-plot-btn" id="anly-saved-trigger">Saved ▾</button>
+          <div class="anly-saved-panel" id="anly-saved-panel"></div>
+        </div>
+      </div>
+      <div id="anly-chart" class="anly-chart"><div class="graph-placeholder">Pick a series and a vintage date, then click Plot.</div></div>
+    `;
+
+    const runRegBtn = document.getElementById('anly-run-regression-btn');
+    if (runRegBtn) runRegBtn.addEventListener('click', () => renderRegressionWorkflow());
+
+    const trigger = document.getElementById('anly-series-trigger');
+    const panel   = document.getElementById('anly-series-panel');
+    const picker  = document.getElementById('anly-series-picker');
+    const sIn  = document.getElementById('anly-start');
+    const eIn  = document.getElementById('anly-end');
+    const vIn  = document.getElementById('anly-vintage');
+    const btn  = document.getElementById('anly-plot');
+
+    // defaults: start = 1990-01-01, end + vintage = today
+    const today = new Date();
+    const todayStr = `${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}/${today.getFullYear()}`;
+    vIn.value = analyzeState.vintageISO ? isoToMDY(analyzeState.vintageISO) : todayStr;
+    eIn.value = analyzeState.endISO     ? isoToMDY(analyzeState.endISO)     : todayStr;
+    sIn.value = analyzeState.startISO   ? isoToMDY(analyzeState.startISO)   : '01/01/1990';
+    [sIn, eIn, vIn].forEach(attachDateMask);
+
+    document.getElementById('anly-start-min').addEventListener('click', () => {
+      sIn.value = '01/01/1990';
+    });
+    document.getElementById('anly-vint-today').addEventListener('click', () => {
+      vIn.value = todayStr;
+    });
+    document.getElementById('anly-end-vint').addEventListener('click', () => {
+      if (parseDateInput(vIn.value)) eIn.value = vIn.value;
+    });
+
+    // load inventory for series options
+    try {
+      if (!analyzeInventoryCache) {
+        const r = await fetch(`${API}/data/inventory`);
+        analyzeInventoryCache = r.ok ? await r.json() : [];
+      }
+    } catch (e) {
+      analyzeInventoryCache = [];
+    }
+    const list = analyzeInventoryCache || [];
+
+    // initial selection: if we had a previous selection, keep it; otherwise default to first series
+    if (!analyzeState.seriesIds.length && list.length) {
+      analyzeState.seriesIds = [list[0].series_id];
+    } else {
+      analyzeState.seriesIds = analyzeState.seriesIds.filter(id => list.some(r => r.series_id === id));
+    }
+
+    function updateTrigger() {
+      const sels = analyzeState.seriesIds;
+      if (!list.length) { trigger.textContent = 'No series'; return; }
+      if (!sels.length) { trigger.textContent = 'Select series…'; return; }
+      if (sels.length === 1) {
+        const meta = list.find(r => r.series_id === sels[0]);
+        trigger.textContent = meta ? (meta.description ? `${sels[0]} — ${meta.description}` : sels[0]) : sels[0];
+      } else {
+        trigger.textContent = `${sels.length} series selected`;
+      }
+    }
+    function buildPanel() {
+      if (!list.length) {
+        panel.innerHTML = `<div class="anly-series-empty">No series available</div>`;
+        return;
+      }
+      // Split into groups so the regression-derived series are easy to find:
+      //   FRED   = anything that isn't a derived proxy or sector ETF
+      //   ETFs   = ETF_* (raw daily prices used to build drawdowns)
+      //   Drawdowns (equity stress) = DD_*
+      //   Credit composites        = CC_* (incl. CC_AGG)
+      const isModel = id => id.startsWith('MODEL_');
+      const isDD    = id => id.startsWith('DD_') && !isModel(id);
+      const isCC    = id => (id.startsWith('CC_') || id === 'CC_AGG') && !isModel(id);
+      const isETF   = id => id.startsWith('ETF_');
+      const isOther = id => !isModel(id) && !isDD(id) && !isCC(id) && !isETF(id);
+      const groups = [
+        { title: 'FRED indicators',                 rows: list.filter(r => isOther(r.series_id)) },
+        { title: 'Sector ETFs',                     rows: list.filter(r => isETF(r.series_id)) },
+        { title: 'Equity drawdowns (DD_*)',         rows: list.filter(r => isDD(r.series_id)) },
+        { title: 'Credit stress composites (CC_*)', rows: list.filter(r => isCC(r.series_id)) },
+        { title: 'Regression model fits (MODEL_*)', rows: list.filter(r => isModel(r.series_id)) },
+      ].filter(g => g.rows.length);
+      const rowHtml = r => {
+        const checked = analyzeState.seriesIds.includes(r.series_id) ? 'checked' : '';
+        const label = r.description ? `${r.series_id} — ${r.description}` : r.series_id;
+        return `<label class="anly-series-row">
+          <input type="checkbox" value="${r.series_id}" ${checked}>
+          <span class="anly-series-label">${label}</span>
+        </label>`;
+      };
+      panel.innerHTML = `
+        <div class="anly-series-actions">
+          <button type="button" class="anly-series-action" data-act="all">All</button>
+          <button type="button" class="anly-series-action" data-act="none">None</button>
+        </div>
+        ${groups.map(g => `
+          <div class="anly-series-group-label">${g.title}</div>
+          ${g.rows.map(rowHtml).join('')}
+        `).join('')}
+      `;
+      panel.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            if (!analyzeState.seriesIds.includes(cb.value)) analyzeState.seriesIds.push(cb.value);
+          } else {
+            analyzeState.seriesIds = analyzeState.seriesIds.filter(id => id !== cb.value);
+          }
+          updateTrigger();
+        });
+      });
+      panel.querySelectorAll('.anly-series-action').forEach(b => {
+        b.addEventListener('click', () => {
+          if (b.dataset.act === 'all') analyzeState.seriesIds = list.map(r => r.series_id);
+          else                          analyzeState.seriesIds = [];
+          buildPanel();
+          updateTrigger();
+        });
+      });
+    }
+    buildPanel();
+    updateTrigger();
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      picker.classList.toggle('open');
+    });
+    panel.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', () => picker.classList.remove('open'));
+
+    btn.addEventListener('click', () => {
+      const ids = analyzeState.seriesIds.slice();
+      let startIso  = parseDateInput(sIn.value);
+      const endIso  = parseDateInput(eIn.value);
+      const vintIso = parseDateInput(vIn.value);
+      const errBox = document.getElementById('anly-chart');
+      if (!ids.length || !startIso || !endIso || !vintIso) {
+        errBox.innerHTML = `<div class="graph-placeholder">Pick at least one series and valid dates.</div>`;
+        return;
+      }
+      // Auto-snap start date to the latest "earliest available" among selected
+      // series — saves the user from picking 1990-01-01 and getting a plot
+      // dominated by empty space when one of the chosen series only starts in 2023.
+      const earliestPerSeries = ids
+        .map(id => (analyzeInventoryCache || []).find(r => r.series_id === id))
+        .filter(m => m && m.earliest)
+        .map(m => m.earliest);
+      if (earliestPerSeries.length) {
+        const latestStart = earliestPerSeries.reduce((a, b) => a > b ? a : b);
+        if (latestStart > startIso) {
+          startIso = latestStart;
+          sIn.value = isoToMDY(latestStart);
+        }
+      }
+      if (startIso > vintIso) {
+        errBox.innerHTML = `<div class="graph-placeholder">Start date can't be after the vintage cutoff.</div>`;
+        return;
+      }
+      if (endIso > vintIso) {
+        errBox.innerHTML = `<div class="graph-placeholder">End date can't be after the vintage cutoff.</div>`;
+        return;
+      }
+      if (startIso > endIso) {
+        errBox.innerHTML = `<div class="graph-placeholder">Start date can't be after the end date.</div>`;
+        return;
+      }
+      analyzeState.startISO = startIso;
+      analyzeState.endISO = endIso;
+      analyzeState.vintageISO = vintIso;
+      drawAnalyzeChart(ids, startIso, endIso, vintIso);
+    });
+
+    // Save / Load saved plots
+    const saveBtn       = document.getElementById('anly-save');
+    const savedPicker   = document.getElementById('anly-saved-picker');
+    const savedTrigger  = document.getElementById('anly-saved-trigger');
+    const savedPanel    = document.getElementById('anly-saved-panel');
+
+    saveBtn.addEventListener('click', async () => {
+      const ids = analyzeState.seriesIds.slice();
+      const startIso = parseDateInput(sIn.value);
+      const endIso   = parseDateInput(eIn.value);
+      const vintIso  = parseDateInput(vIn.value);
+      if (!ids.length || !startIso || !endIso || !vintIso) {
+        alert('Pick at least one series and valid dates before saving.');
+        return;
+      }
+      const defaultName = ids.length === 1
+        ? `${ids[0]} · ${startIso} → ${endIso}`
+        : `${ids.length} series · ${startIso} → ${endIso}`;
+      const name = await showNameModal({
+        title: 'Name this plot',
+        body: 'Give this overlay a label so you can recognize it later.',
+        initial: defaultName,
+        confirmLabel: 'Save Plot',
+      });
+      if (name === null) return;
+      try {
+        const r = await fetch(`${API}/analysis-plots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim() || null,
+            series_ids: ids,
+            start_date: startIso,
+            end_date: endIso,
+            vintage_date: vintIso,
+          }),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      } catch (e) {
+        alert(`Save failed: ${e.message}`);
+      }
+    });
+
+    async function refreshSavedPanel() {
+      savedPanel.innerHTML = `<div class="anly-saved-empty">Loading…</div>`;
+      try {
+        const r = await fetch(`${API}/analysis-plots`);
+        const list = r.ok ? await r.json() : [];
+        if (!list.length) {
+          savedPanel.innerHTML = `<div class="anly-saved-empty">No saved plots yet</div>`;
+          return;
+        }
+        savedPanel.innerHTML = list.map(p => {
+          const label = p.name || `${(p.series_ids || []).slice(0, 2).join(', ')}${(p.series_ids || []).length > 2 ? '…' : ''}`;
+          const sub = `${p.start_date} → ${p.end_date} · vint ${p.vintage_date}`;
+          return `<div class="anly-saved-row" data-id="${p.plot_id}">
+            <div class="anly-saved-meta">
+              <div class="anly-saved-name">${label}</div>
+              <div class="anly-saved-sub">${sub}</div>
+            </div>
+            <button class="anly-saved-del" data-id="${p.plot_id}" title="Delete">×</button>
+          </div>`;
+        }).join('');
+        savedPanel.querySelectorAll('.anly-saved-row').forEach(row => {
+          row.addEventListener('click', (e) => {
+            if (e.target.closest('.anly-saved-del')) return;
+            const id = +row.dataset.id;
+            const p = list.find(x => x.plot_id === id);
+            if (!p) return;
+            analyzeState.seriesIds = (p.series_ids || []).slice();
+            analyzeState.startISO = p.start_date;
+            analyzeState.endISO = p.end_date;
+            analyzeState.vintageISO = p.vintage_date;
+            sIn.value = isoToMDY(p.start_date);
+            eIn.value = isoToMDY(p.end_date);
+            vIn.value = isoToMDY(p.vintage_date);
+            buildPanel();
+            updateTrigger();
+            savedPicker.classList.remove('open');
+            drawAnalyzeChart(analyzeState.seriesIds, analyzeState.startISO, analyzeState.endISO, analyzeState.vintageISO);
+          });
+        });
+        savedPanel.querySelectorAll('.anly-saved-del').forEach(b => {
+          b.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm('Delete this saved plot?')) return;
+            try {
+              await fetch(`${API}/analysis-plots/${b.dataset.id}`, { method: 'DELETE' });
+              await refreshSavedPanel();
+            } catch (err) { alert(`Delete failed: ${err.message}`); }
+          });
+        });
+      } catch (e) {
+        savedPanel.innerHTML = `<div class="anly-saved-empty">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    savedTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !savedPicker.classList.contains('open');
+      savedPicker.classList.toggle('open');
+      if (willOpen) refreshSavedPanel();
+    });
+    savedPanel.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', () => savedPicker.classList.remove('open'));
+
+    if (analyzeState.seriesIds.length && analyzeState.startISO && analyzeState.endISO && analyzeState.vintageISO) {
+      drawAnalyzeChart(analyzeState.seriesIds, analyzeState.startISO, analyzeState.endISO, analyzeState.vintageISO);
+    }
+  }
+
+  function isoToMDY(iso) {
+    const [y, m, d] = iso.split('-');
+    return `${m}/${d}/${y}`;
+  }
+
+  function attachDateMask(input) {
+    if (!input || input.dataset.maskAttached) return;
+    input.dataset.maskAttached = '1';
+    let lastValid = parseDateInput(input.value) ? input.value : null;
+    input.addEventListener('focus', () => {
+      if (parseDateInput(input.value)) lastValid = input.value;
+      input.value = '';
+    });
+    input.addEventListener('blur', () => {
+      if (!parseDateInput(input.value) && lastValid) {
+        input.value = lastValid;
+      } else if (parseDateInput(input.value)) {
+        lastValid = input.value;
+      }
+    });
+    input.addEventListener('beforeinput', (e) => {
+      if (e.inputType === 'insertText' && e.data && !/^[0-9]$/.test(e.data)) {
+        e.preventDefault();
+      }
+    });
+    input.addEventListener('input', () => {
+      const digits = input.value.replace(/\D/g, '').slice(0, 8);
+      let formatted = digits;
+      if (digits.length > 4) formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+      else if (digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+      input.value = formatted;
+      if (formatted.length === 10 && parseDateInput(formatted)) lastValid = formatted;
+    });
+  }
+
+  async function drawAnalyzeChart(seriesIds, startISO, endISO, vintageISO) {
+    const chart = document.getElementById('anly-chart');
+    if (!chart) return;
+    chart.innerHTML = `<div class="graph-placeholder">Loading…</div>`;
+    setLoading(true);
+    try {
+      const fetched = await Promise.all(seriesIds.map(async id => {
+        const r = await fetch(`${API}/series/${id}/history?start=${startISO}&end=${endISO}&vintage=${vintageISO}`);
+        if (!r.ok) return { id, data: [], error: true };
+        const j = await r.json();
+        return { id, data: j.data || [] };
+      }));
+      const series = fetched
+        .filter(s => s.data.length)
+        .map((s, i) => ({
+          id: s.id,
+          data: s.data,
+          color: ANALYZE_COLORS[i % ANALYZE_COLORS.length],
+          meta: (analyzeInventoryCache || []).find(r => r.series_id === s.id) || {},
+        }));
+      if (!series.length) {
+        chart.innerHTML = `<div class="graph-placeholder">No observations for the chosen series in this range.</div>`;
+        return;
+      }
+      chart.innerHTML = renderLineChart({ series, startISO, endISO, vintageISO });
+      attachChartHover(chart, series);
+      attachLegendDrag(chart);
+      const toggleBtn = chart.querySelector('#anly-legend-toggle');
+      const legendEl  = chart.querySelector('#anly-legend');
+      if (toggleBtn && legendEl) {
+        toggleBtn.addEventListener('click', () => {
+          analyzeState.legendVisible = !analyzeState.legendVisible;
+          legendEl.classList.toggle('hidden', !analyzeState.legendVisible);
+          toggleBtn.textContent = analyzeState.legendVisible ? 'Hide legend' : 'Show legend';
+        });
+      }
+    } catch (e) {
+      chart.innerHTML = `<div class="graph-placeholder">Failed: ${e.message}</div>`;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderLineChart({ series, startISO, endISO, vintageISO }) {
+    const W = 1000, H = 460;
+    const PAD_L = 56, PAD_R = 24, PAD_T = 28, PAD_B = 44;
+    const innerW = W - PAD_L - PAD_R;
+    const innerH = H - PAD_T - PAD_B;
+
+    // Find global time range across all series
+    let tMin = Infinity, tMax = -Infinity;
+    for (const s of series) {
+      s.points = s.data.map(d => ({ t: new Date(d.date + 'T00:00:00').getTime(), v: d.value, iso: d.date }));
+      if (s.points.length) {
+        if (s.points[0].t < tMin) tMin = s.points[0].t;
+        if (s.points[s.points.length - 1].t > tMax) tMax = s.points[s.points.length - 1].t;
+      }
+    }
+    // Per-series normalization: each series gets mapped to [0, 1] so different units overlay sensibly
+    for (const s of series) {
+      let vMin = Infinity, vMax = -Infinity;
+      for (const p of s.points) { if (p.v < vMin) vMin = p.v; if (p.v > vMax) vMax = p.v; }
+      if (vMin === vMax) { vMin -= 1; vMax += 1; }
+      s.vMin = vMin; s.vMax = vMax;
+    }
+
+    const x = t => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+    const yNorm = n => PAD_T + (1 - n) * innerH;
+    const norm = (v, s) => (v - s.vMin) / (s.vMax - s.vMin || 1);
+
+    let pathsSvg = '';
+    for (const s of series) {
+      let d = '';
+      for (let i = 0; i < s.points.length; i++) {
+        const p = s.points[i];
+        d += (i === 0 ? 'M' : 'L') + x(p.t).toFixed(1) + ',' + yNorm(norm(p.v, s)).toFixed(1);
+      }
+      pathsSvg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.4" opacity="0.92"/>`;
+    }
+
+    // Y axis ticks (normalized 0–100%)
+    const yTicks = 5;
+    let yAxis = '';
+    for (let i = 0; i <= yTicks; i++) {
+      const yy = yNorm(i / yTicks);
+      yAxis += `<line x1="${PAD_L}" x2="${W - PAD_R}" y1="${yy}" y2="${yy}" stroke="#1c232c" stroke-width="1"/>`;
+      yAxis += `<text x="${PAD_L - 8}" y="${yy + 3}" text-anchor="end" fill="#6e7681" font-size="10">${Math.round((i / yTicks) * 100)}%</text>`;
+    }
+
+    // X axis ticks
+    const xTicks = 6;
+    let xAxis = '';
+    for (let i = 0; i <= xTicks; i++) {
+      const t = tMin + (tMax - tMin) * (i / xTicks);
+      const xx = x(t);
+      const dt = new Date(t);
+      xAxis += `<line x1="${xx}" x2="${xx}" y1="${PAD_T}" y2="${H - PAD_B}" stroke="#1c232c" stroke-width="1"/>`;
+      xAxis += `<text x="${xx}" y="${H - PAD_B + 16}" text-anchor="middle" fill="#6e7681" font-size="10">${dt.getFullYear()}</text>`;
+    }
+
+    // Hover indicators (one dot per series)
+    let hoverDots = '';
+    for (let i = 0; i < series.length; i++) {
+      hoverDots += `<circle class="anly-hover-dot" data-idx="${i}" cx="0" cy="0" r="3.5" fill="${series[i].color}" stroke="#0a0c14" stroke-width="1.5"/>`;
+    }
+
+    const title = series.length === 1
+      ? series[0].id
+      : `${series.length} series overlay`;
+    const subtitle = `${startISO} → ${endISO} · vintage ≤ ${vintageISO} · normalized 0–100% per series for comparison`;
+    const legend = series.map(s => {
+      const desc = s.meta.description ? ` — ${s.meta.description}` : '';
+      const units = s.meta.units ? ` · ${s.meta.units}` : '';
+      return `<div class="anly-legend-row">
+        <span class="anly-legend-swatch" style="background:${s.color}"></span>
+        <span class="anly-legend-id">${s.id}</span>
+        <span class="anly-legend-desc">${desc}${units} · ${formatNum(s.vMin)} → ${formatNum(s.vMax)}</span>
+      </div>`;
+    }).join('');
+
+    return `
+      <div style="display:flex; align-items:flex-start; gap:14px;">
+        <div style="flex:1; min-width:0">
+          <div class="data-title" style="margin:0 0 4px">${title}</div>
+          <div class="data-subtitle">${subtitle}</div>
+        </div>
+        <button type="button" class="anly-legend-toggle" id="anly-legend-toggle">${analyzeState.legendVisible ? 'Hide legend' : 'Show legend'}</button>
+      </div>
+      <div class="anly-chart-inner" style="position:relative">
+        <svg class="anly-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"
+             data-pad-l="${PAD_L}" data-pad-r="${PAD_R}" data-pad-t="${PAD_T}" data-pad-b="${PAD_B}"
+             data-w="${W}" data-h="${H}" data-tmin="${tMin}" data-tmax="${tMax}">
+          <rect x="${PAD_L}" y="${PAD_T}" width="${innerW}" height="${innerH}" fill="#06090f" stroke="#30363d"/>
+          ${yAxis}
+          ${xAxis}
+          ${pathsSvg}
+          <g class="anly-hover" style="display:none; pointer-events:none">
+            <line class="anly-hover-line" x1="0" x2="0" y1="${PAD_T}" y2="${H - PAD_B}" stroke="#e6edf3" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+            ${hoverDots}
+          </g>
+        </svg>
+        <div class="anly-tooltip" style="display:none"></div>
+        <div class="anly-legend${analyzeState.legendVisible ? '' : ' hidden'}" id="anly-legend">
+          ${legend}
+        </div>
+      </div>
+    `;
+  }
+
+  function attachLegendDrag(chart) {
+    const legend = chart.querySelector('.anly-legend');
+    const wrap   = chart.querySelector('.anly-chart-inner');
+    if (!legend || !wrap) return;
+
+    let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+    legend.addEventListener('mousedown', (e) => {
+      dragging = true;
+      legend.classList.add('dragging', 'active');
+      const rect = legend.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left - wrapRect.left;
+      startTop  = rect.top  - wrapRect.top;
+      legend.style.left = startLeft + 'px';
+      legend.style.top  = startTop  + 'px';
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const wrapRect = wrap.getBoundingClientRect();
+      let nx = startLeft + (e.clientX - startX);
+      let ny = startTop  + (e.clientY - startY);
+      nx = Math.max(0, Math.min(wrapRect.width  - legend.offsetWidth,  nx));
+      ny = Math.max(0, Math.min(wrapRect.height - legend.offsetHeight, ny));
+      legend.style.left = nx + 'px';
+      legend.style.top  = ny + 'px';
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      legend.classList.remove('dragging');
+    });
+
+    // Dim when clicking outside the legend; restore on click
+    document.addEventListener('mousedown', (e) => {
+      if (legend.contains(e.target)) legend.classList.add('active');
+      else legend.classList.remove('active');
+    });
+  }
+
+  function attachChartHover(chart, series) {
+    const svg   = chart.querySelector('.anly-svg');
+    const hover = chart.querySelector('.anly-hover');
+    const hLine = chart.querySelector('.anly-hover-line');
+    const dots  = Array.from(chart.querySelectorAll('.anly-hover-dot'));
+    const tip   = chart.querySelector('.anly-tooltip');
+    if (!svg || !hover || !tip) return;
+
+    const PAD_L = +svg.dataset.padL, PAD_R = +svg.dataset.padR;
+    const PAD_T = +svg.dataset.padT, PAD_B = +svg.dataset.padB;
+    const W = +svg.dataset.w, H = +svg.dataset.h;
+    const tMin = +svg.dataset.tmin, tMax = +svg.dataset.tmax;
+    const innerW = W - PAD_L - PAD_R;
+    const innerH = H - PAD_T - PAD_B;
+
+    const xOf = t => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * innerW;
+    const yNorm = n => PAD_T + (1 - n) * innerH;
+
+    function update(clientX) {
+      const rect = svg.getBoundingClientRect();
+      const relX = clientX - rect.left;
+      const svgX = (relX / rect.width) * W;
+      if (svgX < PAD_L || svgX > W - PAD_R) { hide(); return; }
+      const tAtX = tMin + ((svgX - PAD_L) / innerW) * (tMax - tMin);
+
+      hLine.setAttribute('x1', svgX);
+      hLine.setAttribute('x2', svgX);
+      hover.style.display = '';
+
+      const rows = [];
+      let primaryY = null;
+      for (let i = 0; i < series.length; i++) {
+        const s = series[i];
+        if (!s.points.length) { dots[i].style.display = 'none'; continue; }
+        // binary search nearest by time within this series
+        let lo = 0, hi = s.points.length - 1;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (s.points[mid].t < tAtX) lo = mid + 1; else hi = mid;
+        }
+        let idx = lo;
+        if (idx > 0 && Math.abs(s.points[idx-1].t - tAtX) < Math.abs(s.points[idx].t - tAtX)) idx -= 1;
+        const p = s.points[idx];
+        const px = xOf(p.t);
+        const norm = (p.v - s.vMin) / (s.vMax - s.vMin || 1);
+        const py = yNorm(norm);
+        dots[i].style.display = '';
+        dots[i].setAttribute('cx', px);
+        dots[i].setAttribute('cy', py);
+        if (primaryY === null) primaryY = py;
+        rows.push({ s, p, py });
+      }
+
+      if (!rows.length) { hide(); return; }
+      tip.innerHTML = `
+        <div class="anly-tip-date">${rows[0].p.iso}</div>
+        ${rows.map(r => `
+          <div class="anly-tip-row">
+            <span class="anly-tip-swatch" style="background:${r.s.color}"></span>
+            <span class="anly-tip-id">${r.s.id}</span>
+            <span class="anly-tip-val">${formatNum(r.p.v)}</span>
+          </div>
+        `).join('')}
+      `;
+      tip.style.display = 'block';
+
+      const cssX = (svgX / W) * rect.width;
+      const cssY = (primaryY / H) * rect.height;
+      const tipW = tip.offsetWidth;
+      const tipH = tip.offsetHeight;
+      const flipRight = cssX + tipW + 14 > rect.width;
+      tip.style.left = (flipRight ? cssX - tipW - 10 : cssX + 10) + 'px';
+      tip.style.top  = Math.max(4, Math.min(rect.height - tipH - 4, cssY - tipH - 10)) + 'px';
+    }
+
+    function hide() {
+      hover.style.display = 'none';
+      tip.style.display = 'none';
+    }
+
+    svg.addEventListener('mousemove', e => update(e.clientX));
+    svg.addEventListener('click',     e => update(e.clientX));
+    svg.addEventListener('mouseleave', hide);
+    svg.style.cursor = 'crosshair';
+  }
+
+  function formatNum(v) {
+    if (Math.abs(v) >= 1000) return v.toFixed(0);
+    if (Math.abs(v) >= 100)  return v.toFixed(1);
+    if (Math.abs(v) >= 1)    return v.toFixed(2);
+    return v.toFixed(3);
+  }
+
+  async function openObservationVintages(seriesId, obsDate, meta) {
+    const view = document.getElementById('graph-view');
+    if (!view) return;
+    view.innerHTML = `<div class="graph-placeholder">Loading…</div>`;
+    try {
+      const res = await fetch(`${API}/series/${seriesId}/observation/${obsDate}/vintages`);
+      if (!res.ok) {
+        view.innerHTML = `<div class="graph-placeholder">No vintages found</div>`;
+        return;
+      }
+      const result = await res.json();
+      const vintages = result.vintages || [];
+      view.innerHTML = `
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px">
+          <button class="data-back-btn" id="vint-back">← ${seriesId} history</button>
+          <div class="data-title" style="margin:0">${seriesId} · ${obsDate}</div>
+        </div>
+        <div class="data-subtitle">${vintages.length} vintage${vintages.length === 1 ? '' : 's'} for observation ${obsDate}. Newest revision first.</div>
+        <div class="data-history-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Vintage Date</th>
+                <th class="num">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${vintages.map(v => `
+                <tr>
+                  <td class="mono">${v.vintage_date}</td>
+                  <td class="num">${v.value !== null && v.value !== undefined ? parseFloat(v.value).toFixed(4) : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      document.getElementById('vint-back').addEventListener('click', () => openSeriesHistory(seriesId, meta));
+    } catch (e) {
+      view.innerHTML = `<div class="graph-placeholder">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  async function openSeriesHistory(seriesId, meta) {
+    const view = document.getElementById('graph-view');
+    if (!view) return;
+    view.innerHTML = `<div class="graph-placeholder">Loading…</div>`;
+    try {
+      const res = await fetch(`${API}/series/${seriesId}/history?start=1900-01-01`);
+      if (!res.ok) {
+        view.innerHTML = `<div class="graph-placeholder">No data for ${seriesId}</div>`;
+        return;
+      }
+      const result = await res.json();
+      const data = (result.data || []).slice().reverse();  // newest first
+      const desc = meta && meta.description ? meta.description : '';
+      const units = meta && meta.units ? meta.units : '';
+      view.innerHTML = `
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px">
+          <button class="data-back-btn" id="data-back-to-inv">← Inventory</button>
+          <div class="data-title" style="margin:0">${seriesId}</div>
+        </div>
+        <div class="data-subtitle">${desc}${desc ? ' · ' : ''}${data.length.toLocaleString()} observations${units ? ' · ' + units : ''}. Click a row to see all vintages for that observation date.</div>
+        <div class="data-history-wrap">
+          <table class="data-table clickable">
+            <thead>
+              <tr>
+                <th>Observation Date</th>
+                <th class="num">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(d => `
+                <tr data-obs="${d.date}">
+                  <td class="mono">${d.date}</td>
+                  <td class="num">${parseFloat(d.value).toFixed(4)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      const backBtn = document.getElementById('data-back-to-inv');
+      if (backBtn) backBtn.addEventListener('click', () => renderGraphView());
+      view.querySelectorAll('tbody tr[data-obs]').forEach(row => {
+        row.addEventListener('click', () => openObservationVintages(seriesId, row.dataset.obs, meta));
+      });
+    } catch (e) {
+      view.innerHTML = `<div class="graph-placeholder">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  let dataTab = 'fred';
+
+  function renderGraphView() {
+    const view = document.getElementById('graph-view');
+    if (!view) return;
+    const tabsHtml = `
+      <div class="data-tabs">
+        <button class="data-tab${dataTab === 'fred' ? ' active' : ''}" data-tab="fred">FRED Series</button>
+        <button class="data-tab${dataTab === 'fdic' ? ' active' : ''}" data-tab="fdic">FDIC Acquisitions</button>
+      </div>
+      <div id="data-tab-content"></div>`;
+    view.innerHTML = tabsHtml;
+    view.querySelectorAll('.data-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dataTab = btn.dataset.tab;
+        renderGraphView();
+      });
+    });
+    if (dataTab === 'fred') return renderFredInventory();
+    if (dataTab === 'fdic') return renderFdicInventory();
+  }
+
+  async function renderFredInventory() {
+    const view = document.getElementById('data-tab-content');
+    if (!view) return;
+    view.innerHTML = `<div class="graph-placeholder">Loading…</div>`;
+    try {
+      const res = await fetch(`${API}/data/inventory`);
+      const list = res.ok ? await res.json() : [];
+      if (!list.length) {
+        view.innerHTML = `<div class="graph-placeholder">No FRED data found</div>`;
+        return;
+      }
+      const fmtVal = v => v === null || v === undefined ? '—' : parseFloat(v).toFixed(2);
+      view.innerHTML = `
+        <div style="display:flex; align-items:flex-end; gap:14px; margin-bottom:6px">
+          <div>
+            <div class="data-title">FRED Data Inventory</div>
+            <div class="data-subtitle" style="margin-bottom:0">${list.length} series · ${list.reduce((s, r) => s + r.obs_count, 0).toLocaleString()} total observations stored locally. Click a row to drill in.</div>
+          </div>
+          <button class="data-catchup-btn" id="data-catchup-btn">Catch Up From FRED</button>
+        </div>
+        <div class="data-catchup-result" id="data-catchup-result" style="margin-bottom:18px"></div>
+        <table class="data-table clickable">
+          <thead>
+            <tr>
+              <th>Series ID</th>
+              <th>Description</th>
+              <th>Frequency</th>
+              <th>Units</th>
+              <th class="num">Obs</th>
+              <th>First</th>
+              <th>Latest</th>
+              <th class="num">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(r => `
+              <tr data-series="${r.series_id}">
+                <td class="mono">${r.series_id}</td>
+                <td class="desc">${r.description || '—'}</td>
+                <td>${r.frequency || '—'}</td>
+                <td>${r.units || '—'}</td>
+                <td class="num">${r.obs_count.toLocaleString()}</td>
+                <td class="mono">${r.earliest || '—'}</td>
+                <td class="mono">${r.latest || '—'}</td>
+                <td class="num">${fmtVal(r.latest_value)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+      view.querySelectorAll('tbody tr[data-series]').forEach(row => {
+        const sid = row.dataset.series;
+        const meta = list.find(r => r.series_id === sid);
+        row.addEventListener('click', () => openSeriesHistory(sid, meta));
+      });
+      const catchUpBtn = document.getElementById('data-catchup-btn');
+      const catchUpResult = document.getElementById('data-catchup-result');
+      if (catchUpBtn) catchUpBtn.addEventListener('click', async () => {
+        catchUpBtn.disabled = true;
+        catchUpBtn.textContent = 'Catching Up…';
+        catchUpResult.textContent = '';
+        catchUpResult.classList.remove('success');
+        try {
+          const r = await fetch(`${API}/data/catch-up`, { method: 'POST' });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const out = await r.json();
+          const updated = out.results.filter(x => x.added > 0);
+          const errored = out.results.filter(x => x.error);
+          let msg = `Pulled ${out.total_added.toLocaleString()} new observations across ${updated.length} series.`;
+          if (errored.length) msg += ` ${errored.length} series errored.`;
+          catchUpResult.textContent = msg;
+          catchUpResult.classList.add('success');
+          // Refresh inventory data so counts/dates update
+          renderGraphView();
+        } catch (e) {
+          catchUpResult.textContent = `Catch-up failed: ${e.message}`;
+        } finally {
+          catchUpBtn.disabled = false;
+          catchUpBtn.textContent = 'Catch Up From FRED';
+        }
+      });
+    } catch (e) {
+      view.innerHTML = `<div class="graph-placeholder">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  async function renderFdicInventory() {
+    const view = document.getElementById('data-tab-content');
+    if (!view) return;
+    view.innerHTML = `<div class="graph-placeholder">Loading…</div>`;
+    try {
+      const res = await fetch(`${API}/data/acquisitions`);
+      if (!res.ok) {
+        view.innerHTML = `<div class="graph-placeholder">No FDIC data found</div>`;
+        return;
+      }
+      const result = await res.json();
+      const items = result.items || [];
+      if (!items.length) {
+        view.innerHTML = `<div class="graph-placeholder">No FDIC acquisitions in DB</div>`;
+        return;
+      }
+      const fmtBV = v => v === null || v === undefined ? '—' : '$' + (v / 1000).toLocaleString(undefined, {maximumFractionDigits: 1}) + 'M';
+      const fmtPrice = v => v === null || v === undefined ? '—' : '$' + parseFloat(v).toLocaleString(undefined, {maximumFractionDigits: 1}) + 'M';
+      const fmtPPS = v => v === null || v === undefined ? '—' : '$' + parseFloat(v).toFixed(2);
+      view.innerHTML = `
+        <div class="data-title">FDIC Bank Acquisitions</div>
+        <div class="data-subtitle" style="margin-bottom:18px">${result.total.toLocaleString()} acquisitions on file · ${result.priced.toLocaleString()} with deal price from EDGAR 8-K filings.</div>
+        <div class="data-history-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acq Date</th>
+                <th>Company</th>
+                <th>Acquirer</th>
+                <th class="num">Book Value</th>
+                <th class="num">Deal Price</th>
+                <th class="num">Per Share</th>
+                <th>Type</th>
+                <th>Announced</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(a => `
+                <tr>
+                  <td class="mono">${a.acq_date || '—'}</td>
+                  <td class="desc">${a.company || '—'}</td>
+                  <td class="desc">${a.acquirer_hc_name || a.acquirer_name || '—'}</td>
+                  <td class="num">${fmtBV(a.book_value)}</td>
+                  <td class="num">${fmtPrice(a.deal_price_millions)}</td>
+                  <td class="num">${fmtPPS(a.price_per_share)}</td>
+                  <td>${a.consideration_type || '—'}</td>
+                  <td class="mono">${a.announcement_date || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch (e) {
+      view.innerHTML = `<div class="graph-placeholder">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function handleRoute() {
+    if (window.location.hash === '#graph') {
+      currentSectorKey = null;
+      pendingWeights = {};
+      selectedVersionId = null;
+      stashedWeights = null;
+      editingVersionId = null;
+      editingVersionWeights = null;
+      editEntryMode = null;
+      hasInteracted = false;
+      document.body.classList.remove('detail-mode');
+      document.body.classList.remove('analyze-mode');
+      document.body.classList.add('graph-mode');
+      renderGraphView();
+      updateSaveButton();
+      return;
+    }
+    if (window.location.hash === '#analyze') {
+      currentSectorKey = null;
+      pendingWeights = {};
+      selectedVersionId = null;
+      stashedWeights = null;
+      editingVersionId = null;
+      editingVersionWeights = null;
+      editEntryMode = null;
+      hasInteracted = false;
+      document.body.classList.remove('detail-mode');
+      document.body.classList.remove('graph-mode');
+      document.body.classList.add('analyze-mode');
+      renderAnalyzeView();
+      updateSaveButton();
+      return;
+    }
+    document.body.classList.remove('graph-mode');
+    document.body.classList.remove('analyze-mode');
+    const m = window.location.hash.match(/^#sector\/(.+)$/);
+    if (m && currentData) {
+      const sectorKey = decodeURIComponent(m[1]);
+      currentSectorKey = sectorKey;
+      pendingWeights = {};
+      selectedVersionId = null;
+      stashedWeights = null;
+      editingVersionId = null;
+      editingVersionWeights = null;
+      editEntryMode = null;
+      hasInteracted = false;
+      document.body.classList.add('detail-mode');
+      renderSectorDetail(sectorKey);
+    } else {
+      currentSectorKey = null;
+      pendingWeights = {};
+      document.body.classList.remove('detail-mode');
+      updateSaveButton();
+    }
+  }
+
+  // Warn on reload / tab close if there are unsaved weight changes.
+  // We do NOT auto-save here — if the user confirms reload, pending changes are discarded
+  // and the dashboard reloads with the last saved state from the server.
+  window.addEventListener('beforeunload', e => {
+    if (!isDirty()) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  window.addEventListener('hashchange', handleRoute);
+
+  // Custom date input: MM/DD/YYYY mask, digit-only typing, auto-inserted slashes.
+  // Loads historical data only when the typed value parses to a real date in range.
+  const MIN_DATE_ISO = '1990-01-01';
+
+  function shiftHistDate(days) {
+    const dp = document.getElementById('date-picker');
+    let iso = parseDateInput(dp.value) || parseDateInput(lastValidDateValue || '');
+    if (!iso) return;
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const newValue = `${mm}/${dd}/${yyyy}`;
+    if (!parseDateInput(newValue)) return;  // out of range — silently ignore
+    dp.value = newValue;
+    lastValidDateValue = newValue;
+    loadHistorical();
+  }
+
+  function jumpHistDate(which) {
+    const dp = document.getElementById('date-picker');
+    let target;
+    if (which === 'first') {
+      const [y, m, d] = MIN_DATE_ISO.split('-');
+      target = `${m}/${d}/${y}`;
+    } else {
+      const t = new Date();
+      const yyyy = t.getFullYear();
+      const mm = String(t.getMonth() + 1).padStart(2, '0');
+      const dd = String(t.getDate()).padStart(2, '0');
+      target = `${mm}/${dd}/${yyyy}`;
+    }
+    if (!parseDateInput(target)) return;
+    dp.value = target;
+    lastValidDateValue = target;
+    loadHistorical();
+  }
+
+  function parseDateInput(value) {
+    const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!m) return null;
+    const month = parseInt(m[1], 10);
+    const day   = parseInt(m[2], 10);
+    const year  = parseInt(m[3], 10);
+    if (month < 1 || month > 12) return null;
+    if (day < 1 || day > 31) return null;
+    if (year < 1990) return null;
+    const iso = `${m[3]}-${m[1]}-${m[2]}`;
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    if (d.getFullYear() !== year || d.getMonth() + 1 !== month || d.getDate() !== day) return null;
+    if (d > new Date()) return null;
+    if (iso < MIN_DATE_ISO) return null;
+    return iso;
+  }
+
+  let lastValidDateValue = null;
+  let latestLoadToken = 0;  // bumped on every load*() call so stale fetch responses get ignored
+
+  (function initDatePicker() {
+    const dp = document.getElementById('date-picker');
+    if (!dp) return;
+    if (parseDateInput(dp.value)) lastValidDateValue = dp.value;
+
+    dp.addEventListener('focus', () => {
+      // Stash whatever's there if it's a valid date, then clear so the placeholder
+      // (slashes-only pattern) shows. The user types fresh; if they blur without a
+      // complete valid date, we restore.
+      if (parseDateInput(dp.value)) lastValidDateValue = dp.value;
+      dp.value = '';
+    });
+    dp.addEventListener('blur', () => {
+      if (!parseDateInput(dp.value) && lastValidDateValue) {
+        dp.value = lastValidDateValue;
+      }
+    });
+    dp.addEventListener('beforeinput', (e) => {
+      if (e.inputType === 'insertText' && e.data && !/^[0-9]$/.test(e.data)) {
+        e.preventDefault();
+      }
+    });
+    dp.addEventListener('input', () => {
+      const digits = dp.value.replace(/\D/g, '').slice(0, 8);
+      let formatted = digits;
+      if (digits.length > 4) formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+      else if (digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+      dp.value = formatted;
+      if (formatted.length === 10 && parseDateInput(formatted)) {
+        lastValidDateValue = formatted;
+        loadHistorical();
+      }
+    });
+  })();
+
+  // Global alpha slider — persists to localStorage, debounces refetch on change.
+  (function initGlobalAlphaSlider() {
+    alphaGlobal = readAlphaGlobal();
+    const slider = document.getElementById('alpha-slider');
+    const valueEl = document.getElementById('alpha-value');
+    if (!slider || !valueEl) return;
+    slider.value = String(alphaGlobal);
+    valueEl.textContent = `α = ${alphaGlobal.toFixed(2)}`;
+    let pending = null;
+    slider.addEventListener('input', () => {
+      const v = parseFloat(slider.value);
+      alphaGlobal = v;
+      writeAlphaGlobal(v);
+      // Moving the global slider resets any per-sector overrides so all sectors
+      // follow the new global value. Per-sector sliders re-establish their
+      // override only when subsequently moved.
+      clearAllSectorAlphas();
+      valueEl.textContent = `α = ${v.toFixed(2)}`;
+      // If the per-sector slider is currently mounted (detail view), sync its
+      // visible position to the new global value too.
+      const sectorSlider = document.getElementById('sector-alpha-slider');
+      const sectorValue  = document.getElementById('sector-alpha-value');
+      if (sectorSlider) sectorSlider.value = String(v);
+      if (sectorValue)  sectorValue.textContent = `α = ${v.toFixed(2)}`;
+      if (pending) clearTimeout(pending);
+      pending = setTimeout(() => {
+        pending = null;
+        const liveActive = document.getElementById('btn-live')?.classList.contains('active');
+        if (liveActive !== false) {
+          liveCache = null;
+          loadLive();
+        } else {
+          loadHistorical();
+        }
+      }, 200);
+    });
+  })();
+
+  (async () => {
+    alphaGlobal = readAlphaGlobal();
+    // Hydrate from cache before any network call so a refresh renders instantly.
+    const cachedSectors = readCachedSectors();
+    if (cachedSectors) sectorOrder = cachedSectors.map(s => s.sector_id);
+
+    const cachedDash = readCachedDashboard();
+    if (cachedDash) {
+      currentData = cachedDash;
+      liveCache = cachedDash;
+      renderDashboard(currentData);
+      handleRoute();   // route immediately if we landed on a sector hash
+    }
+
+    // Then refresh in the background; renderDashboard / renderSectorDetail will swap in fresh data.
+    loadSectorOrder();
+    loadLive().then(() => {
+      // If no cache existed, this is the first time we have data — finalize routing now.
+      if (!cachedDash) handleRoute();
+    });
+  })();
 </script>
 </body>
 </html>

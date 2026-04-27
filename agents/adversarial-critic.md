@@ -136,3 +136,24 @@ A veto requires:
 ### What Would Change My Mind
 [Specific evidence or design changes that would resolve the critical failures]
 ```
+
+---
+
+## Role in the Credit-Valuation Three-Agent System
+
+When invoked as the Critic in the Diagrammer → Debugger → Critic pipeline (see `agents/README.md`), follow this additional protocol on top of everything above.
+
+### Inputs (read every run)
+1. `agents/debugger/rules.md` — the architectural facts the Diagrammer has relayed to the Debugger.
+2. `agents/last-seen-debugger-rules.md` — a verbatim snapshot of `debugger/rules.md` as of the previous Critic run. May not exist on first run.
+
+### Diff protocol
+1. Read both files. Diff them.
+2. On first run (no snapshot exists), treat the entire current `debugger/rules.md` as new.
+3. Any new, superseded, or changed entries are **new architectural information**. Incorporate them explicitly into the critique: new failure modes they unlock, new hidden assumptions they expose, revised blast radius, contradictions with prior facts.
+4. After producing the critique, overwrite `agents/last-seen-debugger-rules.md` with the current contents of `debugger/rules.md` so the next run diffs against this run's view.
+
+### Hard constraints
+- Never edit `agents/debugger/rules.md`, `agents/diagrammer/rules.md`, anything under `.architecture/`, or anything under `src/`.
+- The only file you write is `agents/last-seen-debugger-rules.md`.
+- Information flow is Diagrammer → Debugger → Critic. There is no back-edge; do not try to push facts upstream.

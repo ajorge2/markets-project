@@ -1,0 +1,31 @@
+{
+  "title": "Markets Project — System Context",
+  "zoom": "system",
+  "status": "current",
+  "nodes": [
+    { "id": "fred",       "label": "FRED API",                                 "type": "external" },
+    { "id": "fdic",       "label": "FDIC BankFind API",                        "type": "external" },
+    { "id": "edgar",      "label": "SEC EDGAR API",                            "type": "external" },
+    { "id": "scheduler",  "label": "Credit Dashboard — Refresh Worker\n(src/ingestion/scheduler.py)", "type": "service" },
+    { "id": "ingestion",  "label": "Ingestion layer (shared)\n(src/ingestion/)", "type": "component", "drilldown": "components/ingestion.json" },
+    { "id": "postgres",   "label": "Postgres: markets_project\n(schema: src/schema.sql)", "type": "database" },
+    { "id": "compute",    "label": "Credit Dashboard — Indicators\n(src/indicators/compute.py)", "type": "component" },
+    { "id": "api",        "label": "Credit Dashboard — API\n(src/api/main.py)", "type": "service" },
+    { "id": "dashboard",  "label": "Credit Dashboard — Frontend\n(src/dashboard/index.html)", "type": "client" },
+    { "id": "analysis",   "label": "Bank M&A Analysis\n(src/analysis/)",        "type": "component", "drilldown": "components/analysis.json" },
+    { "id": "backup",     "label": "Backup dump\n(src/ingestion/backup.py)",    "type": "component" }
+  ],
+  "edges": [
+    { "from": "scheduler", "to": "ingestion", "label": "cron: refresh FRED series",     "type": "sync" },
+    { "from": "ingestion", "to": "fred",      "label": "HTTP GET observations",          "type": "sync" },
+    { "from": "ingestion", "to": "fdic",      "label": "HTTP GET M&A + financials",      "type": "sync" },
+    { "from": "ingestion", "to": "edgar",     "label": "HTTP GET 8-K filings",           "type": "sync" },
+    { "from": "ingestion", "to": "postgres",  "label": "writes observations & acquisitions", "type": "data" },
+    { "from": "ingestion", "to": "backup",    "label": "dump after refresh",             "type": "sync" },
+    { "from": "compute",   "to": "postgres",  "label": "reads series_observations (point-in-time)", "type": "data" },
+    { "from": "api",       "to": "compute",   "label": "compute_dashboard(as_of)",       "type": "sync" },
+    { "from": "api",       "to": "postgres",  "label": "series history query",           "type": "data" },
+    { "from": "dashboard", "to": "api",       "label": "HTTP GET /dashboard/*",          "type": "sync" },
+    { "from": "analysis",  "to": "postgres",  "label": "reads acquisitions + features",  "type": "data" }
+  ]
+}

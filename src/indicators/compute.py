@@ -56,7 +56,9 @@ SPREAD_SERIES = {
     },
 }
 
-# Sector membership — which series belong to which sector
+# DEPRECATED — superseded by sectors/indicator_sector_map tables loaded via
+# _load_sector_definitions(). Retained only as a reference for the bootstrap
+# script's seed list; safe to delete after one release.
 SECTOR_MAP = {
     "banks":     ["TOTCI", "DFF_SOFR_SPREAD"],
     "consumer":  ["CC_SPREAD", "DRCCLACBS", "DRCLACBS"],
@@ -76,12 +78,49 @@ SERIES_LABELS = {
     "BAMLH0A0HYM2":    "HY Corporate Spread",
 }
 
+# DEPRECATED — see SECTOR_MAP note above.
 SECTOR_LABELS = {
     "banks":     "Bank Stress",
     "consumer":  "Consumer Credit Stress",
     "cre":       "Commercial Real Estate Stress",
     "corporate": "Corporate Credit Stress",
 }
+
+
+def _load_sector_definitions(cur) -> dict:
+    """
+    Load the active sector taxonomy plus per-(series, sector) dual weights.
+
+    Returns: {sector_id: {"label", "group", "sort_order",
+                          "members": [(series_id, weight, weight_credit, weight_equity), ...]}}
+    """
+    cur.execute(
+        """
+        SELECT s.sector_id, s.label, s.sector_group, s.sort_order,
+               m.series_id, m.weight, m.weight_credit, m.weight_equity
+        FROM sectors s
+        LEFT JOIN indicator_sector_map m ON m.sector_id = s.sector_id
+        WHERE s.active
+        ORDER BY s.sort_order, s.label, m.series_id
+        """
+    )
+    out: dict = {}
+    for sector_id, label, group, sort_order, series_id, weight, w_credit, w_equity in cur.fetchall():
+        if sector_id not in out:
+            out[sector_id] = {
+                "label": label,
+                "group": group,
+                "sort_order": sort_order,
+                "members": [],
+            }
+        if series_id is not None:
+            out[sector_id]["members"].append((
+                series_id,
+                float(weight),
+                float(w_credit) if w_credit is not None else None,
+                float(w_equity) if w_equity is not None else None,
+            ))
+    return out
 
 
 def _compute_percentile(value: float, historical_values: list[float], inverted: bool) -> float:
@@ -280,23 +319,55 @@ def _get_worst_staleness(cur, series_ids: list[str]) -> str:
     return worst
 
 
-def compute_dashboard(as_of: date = None) -> dict:
+def compute_dashboard(
+    as_of: date = None,
+    group: str | None = None,
+    alpha: float | None = None,
+    alpha_overrides: dict | None = None,
+) -> dict:
     """
     Compute the full dashboard state as of the given date.
     If as_of is None, uses today (live dashboard mode).
 
+    group filters the returned sectors:
+      - None      → all sectors
+      - "pe"      → sectors where sector_group in ('pe', 'both')
+      - "credit"  → sectors where sector_group in ('credit', 'both')
+      - "both"    → only sectors flagged 'both' (overlap subset)
+
+    alpha is the credit/equity blend:
+      - None or missing → use the legacy `weight` column directly (back-compat)
+      - 0.0 → pure equity weights; 1.0 → pure credit weights
+    alpha_overrides is a {sector_id: alpha} dict that takes precedence over the
+    global alpha for those specific sectors.
+
     Returns a structured dict with:
       - series: per-series details with current value and stress percentile
-      - sectors: per-sector aggregated stress score
+      - sectors: per-sector weighted stress score and component weights
       - as_of_date: the date used for computation
       - is_live: whether this is a live or historical (backtest) computation
     """
     is_live = as_of is None
     if as_of is None:
         as_of = date.today()
+    if group is not None and group not in ("pe", "credit", "both"):
+        raise ValueError(f"invalid group filter: {group!r}")
+    if alpha is not None and not (0.0 <= alpha <= 1.0):
+        raise ValueError(f"alpha must be in [0, 1]; got {alpha!r}")
+    alpha_overrides = alpha_overrides or {}
 
     conn = get_connection()
     cur = conn.cursor()
+
+    cur.execute("SELECT series_id, update_frequency FROM series_registry")
+    freq_map = {row[0]: row[1] for row in cur.fetchall()}
+    spread_freq = {
+        "CC_SPREAD": freq_map.get(SPREAD_SERIES["CC_SPREAD"]["numerator_id"], "unknown"),
+        "DFF_SOFR_SPREAD": freq_map.get(SPREAD_SERIES["DFF_SOFR_SPREAD"]["numerator_id"], "unknown"),
+    }
+
+    def _frequency_for(sid):
+        return freq_map.get(sid) or spread_freq.get(sid) or "unknown"
 
     series_results = {}
 
@@ -327,6 +398,7 @@ def compute_dashboard(as_of: date = None) -> dict:
                 "stress_pct":       stress_pct,
                 "staleness":        staleness,
                 "display_unit":     spec["display_unit"],
+                "update_frequency": _frequency_for(series_id),
             }
             continue
 
@@ -350,6 +422,7 @@ def compute_dashboard(as_of: date = None) -> dict:
                 "stress_pct":       stress_pct,
                 "staleness":        _get_staleness(cur, series_id) if is_live else "historical",
                 "display_unit":     "yoy %",
+                "update_frequency": _frequency_for(series_id),
             }
             continue
 
@@ -374,21 +447,58 @@ def compute_dashboard(as_of: date = None) -> dict:
             "stress_pct":       stress_pct,
             "staleness":        _get_staleness(cur, series_id) if is_live else "historical",
             "display_unit":     "%",
+            "update_frequency": _frequency_for(series_id),
         }
 
-    # Compute per-sector scores as the average of available sub-indicator percentiles
+    # Compute per-sector weighted stress scores from indicator_sector_map.
+    sector_defs = _load_sector_definitions(cur)
     sector_results = {}
-    for sector, members in SECTOR_MAP.items():
-        available = [
-            series_results[sid]["stress_pct"]
-            for sid in members
-            if sid in series_results and series_results[sid]["stress_pct"] is not None
-        ]
-        sector_score = round(sum(available) / len(available), 1) if available else None
-        sector_results[sector] = {
-            "label":      SECTOR_LABELS[sector],
-            "score":      sector_score,
-            "components": members,
+    for sector_id, sdef in sector_defs.items():
+        sgroup = sdef["group"]
+        if group == "pe"     and sgroup not in ("pe", "both"):     continue
+        if group == "credit" and sgroup not in ("credit", "both"): continue
+        if group == "both"   and sgroup != "both":                 continue
+
+        # Resolve effective alpha for this sector: per-sector override > global alpha > None.
+        a = alpha_overrides.get(sector_id, alpha)
+
+        components = []
+        num = 0.0
+        denom = 0.0
+        for sid, w_legacy, w_credit, w_equity in sdef["members"]:
+            # Effective weight policy:
+            #   - If alpha is set AND we have both dual weights, blend them.
+            #   - Else fall back to the legacy weight column.
+            if a is not None and w_credit is not None and w_equity is not None:
+                w_eff = a * w_credit + (1.0 - a) * w_equity
+            else:
+                w_eff = w_legacy
+
+            pct = series_results.get(sid, {}).get("stress_pct")
+            components.append({
+                "series_id":     sid,
+                "weight":        w_eff,
+                "weight_credit": w_credit,
+                "weight_equity": w_equity,
+                "stress_pct":    pct,
+            })
+            # Direction-flip negative weights: a negative w means the indicator
+            # predicts LESS stress for this sector, so contribute (100 - pct)
+            # weighted by |w| instead of pct weighted by w. This keeps the score
+            # in [0, 100] and naturally handles inverse correlations.
+            if pct is not None and w_eff is not None and w_eff != 0:
+                effective_pct = pct if w_eff >= 0 else (100 - pct)
+                num   += effective_pct * abs(w_eff)
+                denom += abs(w_eff)
+        score = round(num / denom, 1) if denom > 0 else None
+
+        sector_results[sector_id] = {
+            "label":         sdef["label"],
+            "group":         sgroup,
+            "sort_order":    sdef["sort_order"],
+            "score":         score,
+            "components":    components,
+            "component_ids": [c["series_id"] for c in components],
         }
 
     cur.close()

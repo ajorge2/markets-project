@@ -10,7 +10,7 @@ FRED_BASE_URL = "https://api.stlouisfed.org/fred"
 
 # Series with dense revision history that exceed the 100k vintage observation limit.
 # For these, we skip vintage dating and store today as the vintage for all history.
-SKIP_VINTAGE = {"TOTCI", "NFCICREDIT"}
+SKIP_VINTAGE = {"TOTCI", "NFCICREDIT", "STLFSI4"}
 
 
 def _get(endpoint: str, params: dict) -> dict:

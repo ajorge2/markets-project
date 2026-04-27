@@ -1,0 +1,20 @@
+{
+  "title": "Dashboard Point-in-Time Query",
+  "zoom": "flow",
+  "status": "current",
+  "nodes": [
+    { "id": "dashboard", "label": "Credit Dashboard — Frontend\n(src/dashboard/index.html)", "type": "client" },
+    { "id": "api",       "label": "Credit Dashboard — API\n(src/api/main.py)", "type": "service" },
+    { "id": "compute",   "label": "Credit Dashboard — Indicators\n(src/indicators/compute.py)", "type": "component" },
+    { "id": "postgres",  "label": "Postgres\n(schema: src/schema.sql)",      "type": "database" }
+  ],
+  "steps": [
+    { "from": "dashboard", "to": "api",       "label": "GET /dashboard/asof/{date}",                          "type": "sync" },
+    { "from": "api",       "to": "compute",   "label": "compute_dashboard(as_of=d)",                          "type": "sync" },
+    { "from": "compute",   "to": "postgres",  "label": "SELECT observations WHERE vintage_date <= as_of",     "type": "data" },
+    { "from": "postgres",  "to": "compute",   "label": "rows",                                                "type": "return" },
+    { "from": "compute",   "to": "compute",   "label": "derive spreads (CC_SPREAD, DFF_SOFR_SPREAD) in-memory", "type": "sync" },
+    { "from": "compute",   "to": "api",       "label": "dashboard state dict",                                "type": "return" },
+    { "from": "api",       "to": "dashboard", "label": "JSON response",                                       "type": "return" }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "FRED Scheduled Refresh",
+  "zoom": "flow",
+  "status": "current",
+  "nodes": [
+    { "id": "scheduler",   "label": "Credit Dashboard — Refresh Worker\n(src/ingestion/scheduler.py)", "type": "service" },
+    { "id": "fred_ingest", "label": "src/ingestion/fred_ingest.py",              "type": "component" },
+    { "id": "fred_client", "label": "src/ingestion/fred_client.py",              "type": "component" },
+    { "id": "fred",        "label": "FRED API",                                  "type": "external" },
+    { "id": "postgres",    "label": "Postgres\n(schema: src/schema.sql)",        "type": "database" },
+    { "id": "backup",      "label": "src/ingestion/backup.py",                   "type": "component" }
+  ],
+  "steps": [
+    { "from": "scheduler",   "to": "fred_ingest", "label": "cron fires: refresh_series(ids)", "type": "sync" },
+    { "from": "fred_ingest", "to": "fred_client", "label": "fetch(series_id)",                "type": "sync" },
+    { "from": "fred_client", "to": "fred",        "label": "HTTP GET /observations",          "type": "sync" },
+    { "from": "fred",        "to": "fred_client", "label": "JSON response",                   "type": "return" },
+    { "from": "fred_client", "to": "fred_ingest", "label": "parsed series data",              "type": "return" },
+    { "from": "fred_ingest", "to": "postgres",    "label": "INSERT series_observations (vintage=today)", "type": "data" },
+    { "from": "fred_ingest", "to": "postgres",    "label": "UPDATE staleness_state",          "type": "data" },
+    { "from": "fred_ingest", "to": "backup",      "label": "dump('fred_refresh')",            "type": "sync" }
+  ]
+}

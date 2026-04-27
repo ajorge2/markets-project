@@ -90,3 +90,65 @@ ON CONFLICT (series_id) DO NOTHING;
 INSERT INTO staleness_state (series_id, status)
 SELECT series_id, 'pending' FROM series_registry
 ON CONFLICT (series_id) DO NOTHING;
+
+-- =============================================================================
+-- Flexible sector taxonomy
+--
+-- The legacy series_registry.sector column is kept for back-compat but is no
+-- longer authoritative. Sector membership and per-(indicator, sector) weights
+-- live in indicator_sector_map; the same indicator can feed multiple sectors
+-- at different weights. sector_weight_snapshots is an audit log of weight
+-- derivations over time.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS sectors (
+    sector_id     TEXT PRIMARY KEY,
+    label         TEXT NOT NULL,
+    sector_group  TEXT NOT NULL,                -- 'pe' | 'credit' | 'both'
+    sort_order    INT  NOT NULL DEFAULT 100,
+    active        BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- No FK on series_id: virtual spread series (CC_SPREAD, DFF_SOFR_SPREAD)
+-- are computed in compute.py and never inserted into series_registry.
+CREATE TABLE IF NOT EXISTS indicator_sector_map (
+    series_id     TEXT NOT NULL,
+    sector_id     TEXT NOT NULL REFERENCES sectors(sector_id),
+    weight        NUMERIC NOT NULL DEFAULT 0,  -- range [-1, 1]; sign encodes direction (negative = inverse correlation)
+    weight_source TEXT NOT NULL DEFAULT 'bootstrap_equal',
+    weight_credit NUMERIC,
+    weight_equity NUMERIC,
+    PRIMARY KEY (series_id, sector_id)
+);
+
+CREATE TABLE IF NOT EXISTS sector_weight_snapshots (
+    derivation_date DATE NOT NULL,
+    series_id       TEXT NOT NULL,
+    sector_id       TEXT NOT NULL,
+    weight          NUMERIC NOT NULL,
+    method          TEXT NOT NULL,
+    notes           TEXT,
+    PRIMARY KEY (derivation_date, series_id, sector_id)
+);
+
+-- Append-only versioned snapshots: each save of a sector's weights inserts a row here.
+CREATE TABLE IF NOT EXISTS sector_weight_versions (
+    version_id  SERIAL PRIMARY KEY,
+    sector_id   TEXT NOT NULL REFERENCES sectors(sector_id),
+    saved_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    weights     JSONB NOT NULL,
+    name        TEXT,
+    notes       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_swv_sector_recent ON sector_weight_versions(sector_id, saved_at DESC);
+
+-- Saved overlays from the Analyze Data view: one row per saved plot.
+CREATE TABLE IF NOT EXISTS analysis_plots (
+    plot_id      SERIAL PRIMARY KEY,
+    name         TEXT,
+    saved_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    series_ids   JSONB NOT NULL,
+    start_date   DATE NOT NULL,
+    end_date     DATE NOT NULL,
+    vintage_date DATE NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_analysis_plots_recent ON analysis_plots(saved_at DESC);

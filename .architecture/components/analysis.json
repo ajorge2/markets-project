@@ -1,0 +1,26 @@
+{
+  "title": "Bank M&A Regression Pipeline",
+  "zoom": "component",
+  "status": "current",
+  "nodes": [
+    { "id": "postgres",      "label": "Postgres\n(table: acquisitions)",          "type": "database" },
+    { "id": "build_dataset", "label": "src/analysis/build_dataset.py",            "type": "component" },
+    { "id": "regression",    "label": "src/analysis/regression.py",               "type": "component" },
+    { "id": "analysis_r",    "label": "src/analysis/analysis.R\n(companion script)", "type": "component" },
+    { "id": "deals_csv",     "label": "src/analysis/deals.csv",                   "type": "component" },
+    { "id": "coefficients",  "label": "src/analysis/coefficients.csv",            "type": "component" },
+    { "id": "residuals",     "label": "src/analysis/residuals.csv",               "type": "component" },
+    { "id": "holdout",       "label": "src/analysis/holdout.csv",                 "type": "component" },
+    { "id": "plots",         "label": "src/analysis/plots/\n(diagnostic PNGs)",   "type": "component" }
+  ],
+  "edges": [
+    { "from": "build_dataset", "to": "postgres",     "label": "reads acquisitions (+ FRED features)", "type": "data" },
+    { "from": "build_dataset", "to": "deals_csv",    "label": "writes prepared dataset",              "type": "data" },
+    { "from": "regression",    "to": "deals_csv",    "label": "loads prepared dataset",               "type": "data" },
+    { "from": "regression",    "to": "coefficients", "label": "writes fit coefficients",              "type": "data" },
+    { "from": "regression",    "to": "residuals",    "label": "writes residuals",                     "type": "data" },
+    { "from": "regression",    "to": "holdout",      "label": "writes holdout predictions",           "type": "data" },
+    { "from": "regression",    "to": "plots",        "label": "writes diagnostic plots",              "type": "data" },
+    { "from": "analysis_r",    "to": "deals_csv",    "label": "reads prepared dataset (parallel path)", "type": "data" }
+  ]
+}

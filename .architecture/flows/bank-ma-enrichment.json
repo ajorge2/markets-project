@@ -1,0 +1,23 @@
+{
+  "title": "Bank M&A Two-Stage Enrichment",
+  "zoom": "flow",
+  "status": "current",
+  "nodes": [
+    { "id": "operator",     "label": "Human operator",                            "type": "actor" },
+    { "id": "fdic_ingest",  "label": "src/ingestion/fdic_ingest.py",              "type": "component" },
+    { "id": "fdic",         "label": "FDIC BankFind API",                         "type": "external" },
+    { "id": "edgar_ingest", "label": "src/ingestion/edgar_ingest.py",             "type": "component" },
+    { "id": "edgar",        "label": "SEC EDGAR API",                             "type": "external" },
+    { "id": "postgres",     "label": "Postgres\n(table: acquisitions)",           "type": "database" }
+  ],
+  "steps": [
+    { "from": "operator",     "to": "fdic_ingest",  "label": "manual run",                                  "type": "sync" },
+    { "from": "fdic_ingest",  "to": "fdic",         "label": "query CHANGECODE 223 (merger w/o assistance)", "type": "sync" },
+    { "from": "fdic",         "to": "fdic_ingest",  "label": "merger events + pre-deal financials",         "type": "return" },
+    { "from": "fdic_ingest",  "to": "postgres",     "label": "INSERT acquisitions (company, book_value, acquirer)", "type": "data" },
+    { "from": "operator",     "to": "edgar_ingest", "label": "manual run (stage 2)",                        "type": "sync" },
+    { "from": "edgar_ingest", "to": "edgar",        "label": "find 8-K filings for each deal",              "type": "sync" },
+    { "from": "edgar",        "to": "edgar_ingest", "label": "8-K documents",                               "type": "return" },
+    { "from": "edgar_ingest", "to": "postgres",     "label": "UPDATE acquisitions (deal_price, consideration, announcement_date)", "type": "data" }
+  ]
+}

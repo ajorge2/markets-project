@@ -1,0 +1,39 @@
+# VCS / IDE
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+.DS_Store
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.env
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Local data and logs
+*.log
+data/
+logs/
+sessions/
+.architecture/
+
+# Agent / repo metadata that doesn't need to ship in the image
+agents/
+tools/
+CLAUDE.md
+README.md
+
+# The dashboard ships separately on Vercel — don't bloat the backend image with it.
+src/dashboard/
+
+# Build artifacts
+dist/
+build/
+*.egg-info

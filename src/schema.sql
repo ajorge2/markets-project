@@ -83,7 +83,11 @@ INSERT INTO series_registry VALUES
     ('DRCRELEXFACBS','CRE loan delinquency rate (excl. farmland)', 'cre',      'slow',    'quarterly', 'DRCRELEXFACBS','percent'),
     -- Corporate
     ('BAMLC0A0CM',   'IG corporate credit spread',                 'corporate','fast',    'daily',     'BAMLC0A0CM',   'percent'),
-    ('BAMLH0A0HYM2', 'HY corporate credit spread',                 'corporate','fast',    'daily',     'BAMLH0A0HYM2', 'percent')
+    ('BAMLH0A0HYM2', 'HY corporate credit spread',                 'corporate','fast',    'daily',     'BAMLH0A0HYM2', 'percent'),
+    -- Aggregate credit composite components (used by derive_stress_proxies for CC_AGG)
+    ('BAA10Y',       'Moody''s BAA - 10Y Treasury spread',         'corporate','fast',    'daily',     'BAA10Y',       'percent'),
+    ('NFCICREDIT',   'NFCI credit subindex',                       'corporate','fast',    'weekly',    'NFCICREDIT',   'index'),
+    ('STLFSI4',      'St Louis Fed Financial Stress Index',        'corporate','fast',    'weekly',    'STLFSI4',      'index')
 ON CONFLICT (series_id) DO NOTHING;
 
 -- Seed staleness state for all registered series

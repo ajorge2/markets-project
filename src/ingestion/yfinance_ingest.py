@@ -110,13 +110,16 @@ def ingest_ticker(ticker: str, start: str = "1990-01-01"):
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM series_observations WHERE series_id = %s", (sid,))
     before = cur.fetchone()[0]
-    cur.executemany(
+    from psycopg2.extras import execute_values
+    execute_values(
+        cur,
         """
         INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
-        VALUES (%(sid)s, %(observation_date)s, %(vintage_date)s, %(value)s)
+        VALUES %s
         ON CONFLICT (series_id, observation_date, vintage_date) DO NOTHING
         """,
-        rows,
+        [(r["sid"], r["observation_date"], r["vintage_date"], r["value"]) for r in rows],
+        page_size=1000,
     )
     cur.execute("SELECT COUNT(*) FROM series_observations WHERE series_id = %s", (sid,))
     after = cur.fetchone()[0]

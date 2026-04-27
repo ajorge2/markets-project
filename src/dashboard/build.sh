@@ -8,6 +8,7 @@ if [ -z "${API_BASE:-}" ]; then
   exit 1
 fi
 
+cd "$(dirname "$0")"
 mkdir -p dist
 sed "s|__API_BASE__|${API_BASE}|g" index.html > dist/index.html
 echo "Built dist/index.html with API_BASE=${API_BASE}"

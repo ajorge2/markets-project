@@ -246,14 +246,16 @@ def persist_model_fit(cur, series_id: str, description: str, values: pd.Series) 
     ]
     if not rows:
         return
-    # psycopg2 executemany is OK at this size (~13k rows × ~26 sectors)
-    cur.executemany(
+    from psycopg2.extras import execute_values
+    execute_values(
+        cur,
         """
         INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
-        VALUES (%s, %s, %s, %s)
+        VALUES %s
         ON CONFLICT (series_id, observation_date, vintage_date) DO UPDATE SET value = EXCLUDED.value
         """,
         rows,
+        page_size=2000,
     )
 
 

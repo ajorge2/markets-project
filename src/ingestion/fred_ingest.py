@@ -96,13 +96,16 @@ def load(jsonl_path: Path = DEFAULT_OUT):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.executemany(
+    from psycopg2.extras import execute_values
+    execute_values(
+        cur,
         """
         INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
-        VALUES (%(series_id)s, %(observation_date)s, %(vintage_date)s, %(value)s)
+        VALUES %s
         ON CONFLICT (series_id, observation_date, vintage_date) DO NOTHING
         """,
-        rows,
+        [(r["series_id"], r["observation_date"], r["vintage_date"], r["value"]) for r in rows],
+        page_size=1000,
     )
 
     # Update staleness for each series based on its last observation in the file

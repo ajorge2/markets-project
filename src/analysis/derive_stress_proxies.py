@@ -46,8 +46,8 @@ SUB_SECTOR_CREDIT = {
     "lending_and_markets":              ["DRTSCILM", "CORBLACBS", "DRBLACBS", "CORALACBS"],
     "real_estate_finance_and_services": ["SUBLPDRCSN", "SUBLPDRCSM", "SUBLPDRCSC",
                                           "CORCREXFACBS", "DRCRELEXFACBS", "CORSFRMACBS"],
-    "financial_services":               ["DRTSCILM", "CORALACBS"],
-    "business_services":                ["DRTSCILM", "CORBLACBS"],
+    "financial_services":               ["CORBLACBS"],
+    "business_services":                ["CORBLACBS"],
 }
 
 # Aggregate credit composite (used for the 9 sectors without sub-sector data).
@@ -97,14 +97,17 @@ def _bulk_insert(cur, series_id: str, rows: list[tuple]):
     """rows: list of (observation_date, value)."""
     if not rows:
         return 0
-    payload = [{"sid": series_id, "obs": d, "vintage": d, "val": float(v)} for d, v in rows]
-    cur.executemany(
+    from psycopg2.extras import execute_values
+    payload = [(series_id, d, d, float(v)) for d, v in rows]
+    execute_values(
+        cur,
         """
         INSERT INTO series_observations (series_id, observation_date, vintage_date, value)
-        VALUES (%(sid)s, %(obs)s, %(vintage)s, %(val)s)
+        VALUES %s
         ON CONFLICT (series_id, observation_date, vintage_date) DO NOTHING
         """,
         payload,
+        page_size=2000,
     )
     return len(payload)
 

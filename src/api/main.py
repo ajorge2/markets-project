@@ -8,9 +8,10 @@ Endpoints:
   GET /health                     — liveness check
 """
 
-import sys
-sys.path.insert(0, "../ingestion")
-sys.path.insert(0, "../indicators")
+import os, sys
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_HERE, "..", "ingestion"))
+sys.path.insert(0, os.path.join(_HERE, "..", "indicators"))
 
 from datetime import date
 from fastapi import FastAPI, HTTPException, Query, Body

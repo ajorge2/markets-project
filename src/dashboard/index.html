@@ -2160,7 +2160,12 @@
 </div>
 
 <script>
-  const API = 'http://localhost:8000';
+  // API base is templated at deploy time. Locally falls back to localhost:8000.
+  // Vercel build replaces __API_BASE__ with the value of the API_BASE env var.
+  const API = (() => {
+    const tpl = '__API_BASE__';
+    return tpl.startsWith('__') ? 'http://localhost:8000' : tpl;
+  })();
 
   let currentData = null;
   let liveCache = null;      // last successful /dashboard/current response

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "bash src/dashboard/build.sh",
+  "outputDirectory": "src/dashboard/dist",
+  "framework": null
+}

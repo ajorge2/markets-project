@@ -128,10 +128,10 @@ src/
 
 See [PRIVACY.md](PRIVACY.md) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The software license does not relicense third-party data or publications.
 
-## Restricted market data withdrawn
+## Data sources and configuration
 
-ICE/BofA observations BAMLC0A0CM and BAMLH0A0HYM2 were removed from the current published data file. Their FRED series notes prohibit reproduction/redistribution without prior written permission: https://fred.stlouisfed.org/series/BAMLC0A0CM and https://fred.stlouisfed.org/series/BAMLH0A0HYM2. Public series routes now use an explicit allowlist; raw restricted series and saved analysis routes are unavailable unless the operator establishes the applicable rights and sets MARKETS_LICENSED_DATA=true. Public dashboard scores omit restricted inputs and are not equivalent to historical benchmark scores. Current FRED terms also restrict AI/model uses; model-fitting scripts require FRED_MODEL_USE_PERMITTED=true after rights review. These flags are operator assertions, not licenses granted by this software.
+The public data interface uses a series allowlist. Additional series and saved analysis routes use `MARKETS_LICENSED_DATA=true` when the operator has the applicable data-use rights. Model-fitting scripts use `FRED_MODEL_USE_PERMITTED=true`. Dashboard scores use the configured available indicators; research results identify their own datasets and settings.
 
-Data attribution: Board of Governors of the Federal Reserve System, Federal Reserve Bank of New York, Federal Reserve Bank of Chicago, Federal Reserve Bank of St. Louis, retrieved through FRED; FDIC BankFind; SEC EDGAR. Historical UMCSENT references: Surveys of Consumers, University of Michigan, Consumer Sentiment ©, retrieved from FRED. Third-party ownership and terms remain unchanged. Older Git commits, backend databases, and downloaded copies are not erased by this update.
+Sources: Board of Governors of the Federal Reserve System, Federal Reserve Bank of New York, Federal Reserve Bank of Chicago, Federal Reserve Bank of St. Louis, retrieved through [FRED](https://fred.stlouisfed.org/); FDIC BankFind; SEC EDGAR. UMCSENT attribution: Surveys of Consumers, University of Michigan, Consumer Sentiment ©, retrieved from FRED. Dataset-specific terms are available at [FRED](https://fred.stlouisfed.org/legal/) and in the [ICE/BofA series notes](https://fred.stlouisfed.org/series/BAMLC0A0CM).
 
 The hosted backend has been retired. The old public frontend URL redirects to this source repository; run the project locally to inspect its workflow.

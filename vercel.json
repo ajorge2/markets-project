@@ -1,5 +1,12 @@
 {
   "buildCommand": "bash src/dashboard/build.sh",
   "outputDirectory": "src/dashboard/dist",
-  "framework": null
+  "framework": null,
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://github.com/ajorge2/markets-project",
+      "permanent": false
+    }
+  ]
 }

@@ -14,13 +14,28 @@ sys.path.insert(0, os.path.join(_HERE, "..", "ingestion"))
 sys.path.insert(0, os.path.join(_HERE, "..", "indicators"))
 
 from datetime import date
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, Request
+from fastapi.responses import JSONResponse
+import secrets
 from fastapi.middleware.cors import CORSMiddleware
 
 from compute import compute_dashboard
 from db import get_connection
 
 app = FastAPI(title="Credit Stress Dashboard")
+
+@app.middleware("http")
+async def protect_operator_writes(request: Request, call_next):
+    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+        expected = os.environ.get("MARKETS_ADMIN_TOKEN", "")
+        actual = request.headers.get("authorization", "")
+        if not expected or not secrets.compare_digest(actual, "Bearer " + expected):
+            return JSONResponse({"detail": "Public dashboard is read-only. Operator authorization required."}, status_code=403)
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,

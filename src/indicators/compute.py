@@ -25,6 +25,10 @@ Signal design notes:
     before that date.
 """
 
+try:
+    from src.data_rights import public_series_allowed
+except ModuleNotFoundError:
+    from data_rights import public_series_allowed
 from datetime import date
 from db import get_connection
 
@@ -372,6 +376,9 @@ def compute_dashboard(
     series_results = {}
 
     for series_id, label in SERIES_LABELS.items():
+        if not public_series_allowed(series_id):
+            series_results[series_id] = {"label": label, "value": None, "stress_pct": None, "observation_date": None, "vintage_date": None, "staleness": "license_required", "display_unit": "", "license_note": "Redistribution rights required; no index observations are published."}
+            continue
         inverted = series_id in INVERTED_SERIES
 
         # --- Spread indicators (computed from two raw series) ---
@@ -466,6 +473,8 @@ def compute_dashboard(
         num = 0.0
         denom = 0.0
         for sid, w_legacy, w_credit, w_equity in sdef["members"]:
+            if not public_series_allowed(sid):
+                continue
             # Effective weight policy:
             #   - If alpha is set AND we have both dual weights, blend them.
             #   - Else fall back to the legacy weight column.
@@ -507,6 +516,7 @@ def compute_dashboard(
     return {
         "as_of_date": as_of.isoformat(),
         "is_live":    is_live,
+        "data_rights_note": "Restricted third-party observations are omitted; public scores are recomputed from available permitted series only. Historical benchmark scores are not the same calculation.",
         "sectors":    sector_results,
         "series":     series_results,
     }

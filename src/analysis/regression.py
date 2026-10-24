@@ -182,4 +182,6 @@ def _save_outputs(model, df, train, test, surviving):
 
 
 if __name__ == "__main__":
+    if os.getenv("FRED_MODEL_USE_PERMITTED") != "true":
+        raise SystemExit("Model fitting is disabled until the operator establishes source-data model-use rights and sets FRED_MODEL_USE_PERMITTED=true. See FRED terms and THIRD_PARTY_NOTICES.md.")
     run_regression()

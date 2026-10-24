@@ -1,3 +1,9 @@
 # Public dashboard boundary
 
 Reads expose research derived from the cited public FRED, FDIC, and SEC sources. Mutating routes require an operator bearer token configured as `MARKETS_ADMIN_TOKEN`; without it all writes are disabled. Keep that token on the server/operator client, never in a static dashboard bundle. The model is research and does not provide investment advice. Public availability does not establish redistribution rights for every third-party series; consult each source series' terms before republishing underlying data.
+
+## Restricted market data withdrawn
+
+ICE/BofA observations BAMLC0A0CM and BAMLH0A0HYM2 were removed from the current published data file. Their FRED series notes prohibit reproduction/redistribution without prior written permission: https://fred.stlouisfed.org/series/BAMLC0A0CM and https://fred.stlouisfed.org/series/BAMLH0A0HYM2. Public series routes now use an explicit allowlist; raw restricted series and saved analysis routes are unavailable unless the operator establishes the applicable rights and sets MARKETS_LICENSED_DATA=true. Public dashboard scores omit restricted inputs and are not equivalent to historical benchmark scores. Current FRED terms also restrict AI/model uses; model-fitting scripts require FRED_MODEL_USE_PERMITTED=true after rights review. These flags are operator assertions, not licenses granted by this software.
+
+Data attribution: Board of Governors of the Federal Reserve System, Federal Reserve Bank of New York, Federal Reserve Bank of Chicago, Federal Reserve Bank of St. Louis, retrieved through FRED; FDIC BankFind; SEC EDGAR. Historical UMCSENT references: Surveys of Consumers, University of Michigan, Consumer Sentiment ©, retrieved from FRED. Third-party ownership and terms remain unchanged. Older Git commits, backend databases, and downloaded copies are not erased by this update.

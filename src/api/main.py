@@ -17,6 +17,7 @@ from datetime import date
 from fastapi import FastAPI, HTTPException, Query, Body, Request
 from fastapi.responses import JSONResponse
 import secrets
+from src.data_rights import PUBLIC_SERIES, public_series_allowed, licensed_data_enabled
 from fastapi.middleware.cors import CORSMiddleware
 
 from compute import compute_dashboard
@@ -26,6 +27,11 @@ app = FastAPI(title="Credit Stress Dashboard")
 
 @app.middleware("http")
 async def protect_operator_writes(request: Request, call_next):
+    if request.method in {"GET", "HEAD"} and not licensed_data_enabled():
+        parts = request.url.path.strip('/').split('/')
+        restricted = (len(parts) > 1 and parts[0] == 'series' and not public_series_allowed(parts[1])) or request.url.path.startswith('/analysis/')
+        if restricted:
+            return JSONResponse({"detail": "This data route requires documented redistribution/model-use rights. Public source links remain available."}, status_code=451)
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         expected = os.environ.get("MARKETS_ADMIN_TOKEN", "")
         actual = request.headers.get("authorization", "")
@@ -490,9 +496,10 @@ def data_inventory():
             LIMIT 1) AS latest_value
         FROM series_registry r
         LEFT JOIN series_observations o ON o.series_id = r.series_id
+        WHERE r.series_id = ANY(%s)
         GROUP BY r.series_id, r.description, r.update_frequency, r.units
         ORDER BY r.series_id
-        """
+        """, (list(PUBLIC_SERIES),)
     )
     rows = cur.fetchall()
     cur.close()
